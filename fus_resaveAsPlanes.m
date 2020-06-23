@@ -1,11 +1,11 @@
 function ffns = fus_resaveAsPlanes(ffn)
 % Resave massive data matrix into individual files by plane for more 
 % efficient memory usage
-fprintf('loading massive file "%s"...\n',ffn)
+fprintf('loading file "%s"...\n',ffn)
 
 load(ffn,'epoch_bef');
 
-fprintf('resaving by plane to reduce memory load ...\n')
+fprintf('resaving to individual files for each plane ...\n')
 
 [pn,fnRoot,~] = fileparts(ffn);
 

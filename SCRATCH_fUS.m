@@ -2,9 +2,9 @@
 pth = 'C:\Users\Daniel\Documents\MATLAB\FigurePopoutData';
 cd(pth)
 
-% Spsecify the "root" of your filename.  Just the mat file downloaded from
+% Specify the "root" of your filename.  Just the mat file downloaded from
 % Ali's Google drive.
-fnRoot = 'Rumba\Rum078_Streaming\AllData_Streaming_rum078';
+fnRoot = 'Rumba\Rum078_Streaming\AllData_Streaming_rum078.mat';
 
 
 
@@ -42,16 +42,18 @@ ax.Title.Interpreter = 'none';
 
 
 
-%% Run ROI analysis
+%% Run ROI Explorer
 % Quick and dirty gui to let you draw an ROI on a plane and plot the
 % mean pixel timecourses for all stimuli within the roi.  
 % This can be run at anypoint during analysis.
 % See help fus_PlaneExplorer for more options.
 
 
-roiType = 'circle';
-% roiType = 'freehand';
+
+% roiType = 'ellipse';
+roiType = 'freehand';
 % roiType = 'polygon'; 
+% roiType = 'assisted';
 
 planeID = 1;
 
@@ -88,10 +90,12 @@ PreOpts.hpFc    = []; % Hz
 PreOpts.detrendData = false; % applies linear detrend for each pixel on a trial-by-trial basis
 
 
+
 % In-Plane Spatial smoothing ----------------
 % fus_smoothSpatial convolves each Plane at each timepoint with a 2d
 % gaussian.  The default is 5 pixels square (~1.8 FWHM pixels)
-Plane = fus_smoothSpatial(Plane,11); 
+% Comment out this line for no spatial smoothing
+Plane = fus_smoothSpatial(Plane,5); 
 
 
 
@@ -136,7 +140,18 @@ for pid = 1:Plane(1).I.nPlanes
     
     
     
-    % First optionally detrend the data for each stimulus trial over time
+    % Optionally Normalize to a pre-stim baseline for each trial
+    if ~isempty(PreOpts.preStimFrames)
+        B = mean(Data(:,:,:,PreOpts.preStimFrames),I.dFrames);
+        B = repmat(B,[1 1 1 I.nFrames]);
+        Data = (Data - B) ./ B;
+        Plane(pid).Manifest{end+1} = 'Baseline normalizaton';
+    end
+    
+    
+    
+    
+    % Optionally detrend the data for each stimulus trial over time
     if PreOpts.detrendData
         for j = 1:I.nStim
             for k = 1:I.nTrials
@@ -257,17 +272,6 @@ for pid = 1:Plane(1).I.nPlanes
     ax.Title.Interpreter = 'none';
     drawnow
     
-    
-    
-    
-    
-    % Normalize to a pre-stim baseline for each trial
-    if ~isempty(PreOpts.preStimFrames)
-        B = mean(Data(:,:,:,PreOpts.preStimFrames),I.dFrames);
-        B = repmat(B,[1 1 1 I.nFrames]);
-        Data = (Data - B) ./ B;
-        Plane(pid).Manifest{end+1} = 'Baseline normalizaton';
-    end
     
     
     

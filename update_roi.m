@@ -21,16 +21,18 @@ ind = reshape(ind,[I.nPixels,1]);
 
 mROI = squeeze(mean(Plane.Data(ind,:,:,:),[I.dTrials, I.dPixels],'omitnan'));
 
-
+xvec = 1:I.nFrames;
 ivec = 1:0.25:I.nFrames;
 if any(isnan(mROI(:)))
     miROI = nan(I.nStim,length(ivec));
 else
     for i = 1:I.nStim
-        miROI(i,:) = interp1(1:I.nFrames,mROI(i,:),ivec,'makima');
+        miROI(i,:) = interp1(xvec,mROI(i,:),ivec,'makima');
     end
 end
 
+ivec = ivec';
+miROI = miROI';
 
 ax = findobj(figH,'tag','ROITimePlot');
 buildFlag = isempty(ax);
@@ -61,13 +63,19 @@ if isempty(zh)
         'Tag','zeroline');
 end
 
+cm = lines(I.nStim);
 
-h = findobj(ax,'tag','stimlines');
+h = findobj(ax,'-regexp','tag','stimline*');
 if isempty(h)
-    h = line(repmat(ivec',1,I.nStim),miROI','parent',ax,'tag','stimlines');
-else
     for i = 1:I.nStim
-        h(i).YData = miROI(i,:);
+        h(i) = line(ivec,miROI(:,i),'color',cm(i,:),'linewidth',2, ...
+            'parent',ax,'tag',sprintf('stimline%d',i));
+    end
+else
+    [~,idx] = sort({h.Tag});
+    h = h(idx);
+    for i = 1:I.nStim
+        h(i).YData = miROI(:,i);
     end
 end
 

@@ -5,6 +5,8 @@ function Plane = fus_loadPlanes(fnRoot,planeID)
 
 if nargin < 2, planeID = []; end
 
+if endsWith(fnRoot,'.mat'), fnRoot(end-3:end) = []; end
+
 
 if isempty(planeID)
     pid = 1;
