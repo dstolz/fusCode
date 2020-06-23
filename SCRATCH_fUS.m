@@ -1,22 +1,17 @@
-
+%% Set whwere you data lives
 pth = 'C:\Users\Daniel\Documents\MATLAB\FigurePopoutData';
 cd(pth)
 
-% fnRoot = 'Kazoo\Kaz046\AllData_Tonotopics_Kaz046';
-% fnRoot = 'Kazoo\Kaz052\AllData_Kaz052';
-
-% fnRoot = 'Rumba\Rum074_Tonotopy\AllData_Tonotopics_rum074';
-
-% fnRoot = 'Rumba\Rum074_Streaming\AllData_Streaming_rum074';
-% fnRoot = 'Rumba\Rum075_Streaming\AllData_Streaming_rum075';
+% Spsecify the "root" of your filename.  Just the mat file downloaded from
+% Ali's Google drive.
 fnRoot = 'Rumba\Rum078_Streaming\AllData_Streaming_rum078';
 
 
 
 
-
-%% Only need to resave original data once
+%% Resave original data
 % Resave data in an array of Planes with some additional info.
+% Only need to do this once.
 
 fus_resaveAsPlanes(fnRoot);
 
@@ -27,6 +22,12 @@ fus_resaveAsPlanes(fnRoot);
 % Load data that has already been reorganized using fus_resaveAsPlanes
 Plane = fus_loadPlanes(fnRoot);
 
+
+
+
+
+
+
 %% View all planes
 f = figure('color','k','units','normalized');
 ax = axes(f,'color','k','Position',[0 0 1 .95]);
@@ -36,10 +37,16 @@ ax.Title.String = Plane(1).I.fileRoot;
 ax.Title.Color = 'w';
 ax.Title.Interpreter = 'none';
 
+
+
+
+
+
+
 %% Preprocess Data
     
 % Preprocessing option defaults -------------
-PreOpts.preStimFrames   = []; %1:10; % [] = no baseline correction
+PreOpts.preStimFrames   = 1:3; %1:10; % [] = no baseline correction
 PreOpts.maskType        = 'auto'; % options: 'manual','auto','none'
 PreOpts.pixelThreshold  = .8; % used for auto only
 
@@ -53,6 +60,7 @@ PreOpts.cutLeftOfCol    = []; %45;
 PreOpts.cutRightOfCol   = []; %90;
 
 % Temporal filtering options ----------------
+%  leave empty to not filter in the time domain
 PreOpts.lpFc    = []; % Hz
 PreOpts.hpFc    = []; % Hz
 % PreOpts.lpFc  = 1.2; % Hz
@@ -61,15 +69,22 @@ PreOpts.detrendData = false; % applies linear detrend for each pixel on a trial-
 
 
 % In-Plane Spatial smoothing ----------------
-Plane = fus_smoothSpatial(Plane);
+% fus_smoothSpatial convolves each Plane at each timepoint with a 2d
+% gaussian.  The default is 5 pixels square (~1.8 FWHM pixels)
+Plane = fus_smoothSpatial(Plane,11); 
 
+
+
+
+
+% preprocess each plane at a time
 for pid = 1:Plane(1).I.nPlanes
     Data = Plane(pid).Data;
     I    = Plane(pid).I;
     
     
     if any(contains(Plane(pid).Manifest,'Completed preprocessing data'))
-        warning('Seems that this data has already been processed. Skipping.')
+        warning('Seems that Plane %d data has already been processed. Skipping.',pid)
         continue
     end
     
@@ -79,22 +94,29 @@ for pid = 1:Plane(1).I.nPlanes
     
     
     
-    % Temporal filtering
-    Data = reshape(Data,I.shapePA)';
+    % Optional Temporal high/low pass filtering
     if ~isempty(PreOpts.hpFc)
         Data = highpass(Data,PreOpts.hpFc,I.Fs);
-        Plane(pid).Manifest{end+1} = sprintf('Applied low-pass filter at %f Hz',PreOpts.hpFc);
+        for j = 1:I.nStim
+            for k = 1:I.nTrials
+                Data(:,j,k,:) = highpass(squeeze(Data(:,j,k,:)));
+            end
+        end
+        Plane(pid).Manifest{end+1} = sprintf('Applied high-pass filter at %f Hz',PreOpts.hpFc);
     end
     if ~isempty(PreOpts.lpFc)
-        Data = lowpass(Data,PreOpts.lpFc,I.Fs);
+        for j = 1:I.nStim
+            for k = 1:I.nTrials
+                Data(:,j,k,:) = lowpass(squeeze(Data(:,j,k,:)));
+            end
+        end
         Plane(pid).Manifest{end+1} = sprintf('Applied low-pass filter at %f Hz',PreOpts.lpFc);
     end
-    Data = reshape(Data',I.shapePSTF);
     
     
     
     
-    % First Detrend Data
+    % First optionally detrend the data for each stimulus trial over time
     if PreOpts.detrendData
         for j = 1:I.nStim
             for k = 1:I.nTrials
@@ -105,7 +127,7 @@ for pid = 1:Plane(1).I.nPlanes
     end
     
     ax = subplot(221);
-    fus_viewPlanes(Plane(I.id),ax);
+    fus_viewPlanes(Plane(pid),ax);
     colormap(ax,'hot');
     ax.Title.String = [I.fileRoot sprintf(' - Plane %d',I.id)];
     ax.Title.Color = 'w';
@@ -114,6 +136,11 @@ for pid = 1:Plane(1).I.nPlanes
     
    
     
+    
+    
+    
+    % optionally apply a 'premask' to constrain the std histogram of the
+    % plane
     preMaskInd = true([I.nX I.nY]);
     
     if ~isempty(PreOpts.cutLeftOfCol)
@@ -141,7 +168,13 @@ for pid = 1:Plane(1).I.nPlanes
         Data(~ind) = nan;
     end
     
-    % use std across all data for each pixel to compute mask
+    
+    
+    
+    
+    
+    
+    % use std across all data for each pixel to compute or draw the mask
     mData = std(Data,0,[I.dFrames, I.dStim, I.dTrials]);
     mData = reshape(mData,[I.nX I.nY]);
         
@@ -155,7 +188,11 @@ for pid = 1:Plane(1).I.nPlanes
     drawnow
     
     
-    % create 2d logical mask
+    
+    
+    
+    
+    % create 2d binary mask
     switch PreOpts.maskType
         case 'manual'
             fprintf('Draw ROI\n')
@@ -265,126 +302,59 @@ clear B Data
 
 
 
-
-%% View all planes from square-maksed data
-clear D
-for pid = 1:length(Plane)
-    I = Plane(pid).I;
-    d = rms(Plane(pid).Data,[I.dStim I.dFrames I.dTrials]);
-    d = reshape(d,[I.nX I.nY]);
-    d(:,all(isnan(d),1)) = [];
-    d(all(isnan(d),2),:) = [];
-    D(:,:,pid) = d;
-end
-
-r = quantile(D(:),[.01 .99]);
-montage(D,'displayrange',r);
-colormap parula
-set(gcf,'color','k')
-title(Plane(1).I.fileRoot,'color','w','interpreter','none')
-
-
-
-
-%% Create 'structural' NIFTI volume
+%% Create 'structural' NIfTI volume
 
 fn = sprintf('%s-fUS_Mean.nii',I.fileOriginal);
-ffn = fullfile(rootPath,fn);
+ffn = fullfile(cd,fn);
 
 fus_toNifti(Plane,ffn);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 %% Run ROI analysis
+% Quick and dirty script to let you click a point on a plane and plot the
+% mean timecourses for all stimuli within the roi.  
+% Adjust the radius of the circle in pixels.
 
 figure
 
-planeID = 1;
+planeID = 2;
 
-radius = 3;
-
-% figure('windowstyle','docked')
+roiType = 'polygon'; 
+% roiTYpe = 'circle';
 
 I = Plane(planeID).I;
 
-subplot(4,1,[1 3])
-X = mean(Plane(planeID).Data,[I.dFrames, I.dStim, I.dTrials]);
+
+
+f = gcf;
+set(f,'units','Normalized');
+axes('Units','Normalized','Position',[.1 .45 .8 .45],'Tag','PlaneImage');
+X = rms(Plane(planeID).Data,[I.dFrames, I.dStim, I.dTrials]);
 X = reshape(X,[I.nX I.nY]);
 imagesc(X);
 axis image
 set(gca,'xtick',[],'ytick',[]);
 colormap hot
-% title(fn,'Interpreter','none')
 
-[x,y] = ginput(1);
 
-% % roi = drawpolygon(gca);
-roi = drawcircle('Center',[x y],'Radius',radius);
-% if isempty(roi), return; end
+t = sprintf('%s | Plane %d',I.fileRoot,planeID);
+title(t,'Interpreter','none')
 
-ind = createMask(roi);
+fprintf('Click the image to create an ROI.\nUse right-click for additional options.\n')
 
-ind = reshape(ind,[I.nX I.nY]);
 
-mROI = squeeze(mean(Plane(planeID).Data(ind,:,:,:),[I.dTrials, I.dPixels],'omitnan'));
-% mROI = squeeze(std(Plane(planeID).Data(ind,:,:,:),0,[I.dTrials, I.dPixels]));
-
-mROI(all(isnan(mROI),2),:) = 0;
-
-ivec = 1:0.25:I.nFrames;
-for i = 1:I.nStim
-    miROI(i,:) = interp1(1:I.nFrames,mROI(i,:),ivec,'makima');
+switch roiType
+    case 'circle'
+        roi = drawcircle(gca);
+    case 'polygon'
+        roi = drawpolygon(gca);
 end
 
-ax = subplot(414);
+if isempty(roi), return; end
 
-plot(ax,ivec,miROI')
-grid(ax,'on');
-xlim(ax,[1 I.nFrames]);
+update_roi(roi,[],Plane(planeID),f);
 
-set(ax,'xaxislocation','top');
-
-h = legend(ax,cellstr(num2str((1:I.nStim)')), ...
-    'Location','EastOutside','Orientation','vertical');
-h.Title.String = 'StimID';
-
-x = ax.XAxis.TickValues/2.5;
-ax2 = axes(gcf,'position',ax.Position,'color','none', ...
-    'ytick',[],'xlim',xlim(ax)/2.5,'xtick',x);
-
-
-xlabel(ax,'frames')
-xlabel(ax2,'time (s)')
-
-
-
-
-
-
-
-
+addlistener(roi,'MovingROI',@(src,evnt) update_roi(src,evnt,Plane(planeID),f));
+addlistener(roi,'ROIMoved',@(src,evnt) update_roi(src,evnt,Plane(planeID),f));
 
