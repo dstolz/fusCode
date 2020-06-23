@@ -28,7 +28,9 @@ Plane = fus_loadPlanes(fnRoot);
 
 
 
-%% View all planes
+%% View all planes in a montage
+% This can be run at anypoint during analysis.
+
 f = figure('color','k','units','normalized');
 ax = axes(f,'color','k','Position',[0 0 1 .95]);
 fus_viewPlanes(Plane,ax);
@@ -40,6 +42,24 @@ ax.Title.Interpreter = 'none';
 
 
 
+%% Run ROI analysis
+% Quick and dirty gui to let you draw an ROI on a plane and plot the
+% mean pixel timecourses for all stimuli within the roi.  
+% This can be run at anypoint during analysis.
+% See help fus_PlaneExplorer for more options.
+
+
+roiType = 'circle';
+% roiType = 'freehand';
+% roiType = 'polygon'; 
+
+planeID = 1;
+
+fus_PlaneExplorer(Plane(planeID),roiType);
+
+
+
+
 
 
 
@@ -47,7 +67,7 @@ ax.Title.Interpreter = 'none';
     
 % Preprocessing option defaults -------------
 PreOpts.preStimFrames   = 1:3; %1:10; % [] = no baseline correction
-PreOpts.maskType        = 'auto'; % options: 'manual','auto','none'
+PreOpts.maskType        = 'none'; % options: 'manual','auto','none'
 PreOpts.pixelThreshold  = .8; % used for auto only
 
 % Set the following cut* fields to exclude parts of the plane from the
@@ -253,8 +273,6 @@ for pid = 1:Plane(1).I.nPlanes
     
     
     
-    
-    
 %     % Replace artifactual frames with interpolated values
 %     mpData = mean(Data,[I.dTrials,I.dPixels],'omitnan');
 %     ind = isoutlier(mpData,'median',I.dFrames);
@@ -311,50 +329,8 @@ fus_toNifti(Plane,ffn);
 
 
 
-%% Run ROI analysis
-% Quick and dirty script to let you click a point on a plane and plot the
-% mean timecourses for all stimuli within the roi.  
-% Adjust the radius of the circle in pixels.
-
-figure
-
-planeID = 2;
-
-roiType = 'polygon'; 
-% roiTYpe = 'circle';
-
-I = Plane(planeID).I;
 
 
 
-f = gcf;
-set(f,'units','Normalized');
-axes('Units','Normalized','Position',[.1 .45 .8 .45],'Tag','PlaneImage');
-X = rms(Plane(planeID).Data,[I.dFrames, I.dStim, I.dTrials]);
-X = reshape(X,[I.nX I.nY]);
-imagesc(X);
-axis image
-set(gca,'xtick',[],'ytick',[]);
-colormap hot
 
-
-t = sprintf('%s | Plane %d',I.fileRoot,planeID);
-title(t,'Interpreter','none')
-
-fprintf('Click the image to create an ROI.\nUse right-click for additional options.\n')
-
-
-switch roiType
-    case 'circle'
-        roi = drawcircle(gca);
-    case 'polygon'
-        roi = drawpolygon(gca);
-end
-
-if isempty(roi), return; end
-
-update_roi(roi,[],Plane(planeID),f);
-
-addlistener(roi,'MovingROI',@(src,evnt) update_roi(src,evnt,Plane(planeID),f));
-addlistener(roi,'ROIMoved',@(src,evnt) update_roi(src,evnt,Plane(planeID),f));
 
