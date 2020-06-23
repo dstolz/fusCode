@@ -69,7 +69,7 @@ fus_PlaneExplorer(Plane(planeID),roiType);
     
 % Preprocessing option defaults -------------
 PreOpts.preStimFrames   = 1:3; %1:10; % [] = no baseline correction
-PreOpts.maskType        = 'none'; % options: 'manual','auto','none'
+PreOpts.maskType        = 'freehand'; % options: 'freehand','assisted','auto','none'
 PreOpts.pixelThreshold  = .8; % used for auto only
 
 % Set the following cut* fields to exclude parts of the plane from the
@@ -228,16 +228,8 @@ for pid = 1:Plane(1).I.nPlanes
     
     
     % create 2d binary mask
-    switch PreOpts.maskType
-        case 'manual'
-            fprintf('Draw ROI\n')
-            roi = drawpolygon(gca);
-            if isempty(roi)
-                ind = true(I.nPixels,1);
-            else
-                ind = createMask(roi);
-            end
-            I.roiMaskInd = reshape(ind,[I.nX I.nY]);
+    switch PreOpts.maskType          
+        
         case 'auto'
             qthresh = quantile(mData(:),PreOpts.pixelThreshold);
             ind = mData > qthresh;
@@ -249,6 +241,16 @@ for pid = 1:Plane(1).I.nPlanes
             I.roiMaskInd = ind;
         case 'none'
             I.roiMaskInd = true(I.nX,I.nY);
+            
+        otherwise
+            fprintf('Draw ROI on top right image\n')
+            roi = feval(sprintf('draw%s',lower(PreOpts.maskType)),ax,'Color','r');
+            if isempty(roi)
+                ind = true(I.nPixels,1);
+            else
+                ind = createMask(roi);
+            end
+            I.roiMaskInd = reshape(ind,[I.nX I.nY]);
     end
     
     I.roiMaskInd = I.roiMaskInd & preMaskInd;
