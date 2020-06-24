@@ -79,9 +79,9 @@ else
     end
 end
 
-if ~all(isnan(miROI(:)))
-    ylim(ax,[-1.1 1.1]*max(abs(miROI(:))));
-end
+% if ~all(isnan(miROI(:)))
+%     ylim(ax,[-1.1 1.1]*max(abs(miROI(:))));
+% end
 
 if buildFlag
     h = legend(ax,h, ...
