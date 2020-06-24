@@ -1,12 +1,57 @@
-%% Mean evoked response
+%% Cross-Correlation between stimulus frames and mean data.
+% Finds the maximum Pearson's cross-correlation between the frames when a
+% stimulus is presented and the fUS response.  
+%
+% The idea behind this is that a consistent haemodynamic response to
+% stimlui will have higher correlation with the stimulus at some delay
+% (lag) because of the slow dynamics of neurovascular coupling.
+%
+% Analysis results the magnitude and time lag of the maximum correlation
+% coefficient when the stimulus is shifted frame-by-frame until maxLags
+% seconds (see parameter below).
+%
+% Modify stimFrames (1x2) to indicate the frames when the stimulus is
+% presented, and maxLag (1x1) to set an upper bound on how long to shift
+% the stimulus relative to the data.  Note that negative lags, ie shifting
+% the stimulus earlier, is discarded because that wouldn't make sense.  You
+% may use rectifyFcn to manipulate the data, for example by making all
+% values positive, prior to computing the correlation coefficient (but
+% after computing the mean value across trials).  Set rectifyFcn = [] in
+% order to not do anything to the data (default rectifyFcn = @(a) a.^2)
+%
+% This script plots all planes (rows) vs all stimuli (columns) for the
+% maximum cross-correlation coefficient (for each pixel) and the lag (in
+% seconds) of that value.
+%
+% I have not seen any characterization of the fUS haemodynamic function.
+% If we had this, then we could convolve it with the stimulus vector to
+% extract a more accurate expectation of the brain's response.  This has
+% been done with the haemodynamic response function for the BOLD response
+% in fMRI, but it's not certain this is the same for fUS imaging.
 
-stimFrames = [20 25];
-maxLag = 5;
+stimFrames = [20 25]; % frames when stimulus is presented
 
+maxLag = 5; % seconds
+
+% rectifyFcn = [];
+% rectifyFcn = @abs;
+rectifyFcn = @(a) a.^2;
+
+
+
+
+
+
+
+
+
+
+fprintf('Computing cross-correlation ')
 stimSig = zeros(Plane(1).I.nFrames,1);
 stimSig(stimFrames(1):stimFrames(2)) = 1;
 
 
+maxLag = ceil(maxLag.*I.Fs)./I.Fs; % make sure maxLag is an integer
 
 clf
 set(gcf,'color','w')
@@ -16,8 +61,7 @@ Zlag = Zr;
 for pid = 1:length(Plane)
     
     D = Plane(pid).Data;
-    I = Plane(pid).I;    
-
+    I = Plane(pid).I;       
 
     R = zeros([length(I.roiMaskIdx) I.nStim]);
     Rlag = R;
@@ -26,16 +70,17 @@ for pid = 1:length(Plane)
         y = squeeze(mean(D(:,s,:,:),I.dTrials));
         
         y = y(I.roiMaskIdx,:)';
+                
+        if ~isempty(rectifyFcn)
+            y = feval(rectifyFcn,y);
+        end
         
         for i = 1:size(y,2)
-%             c = corrcoef(y(:,i),stimSig);
-%             R(i,s) = c(2);
-
-            [r,lags] = xcorr(y(:,i),stimSig,maxLag,'unbiased');
-            r(lags < 0) = [];
+            [r,lags] = xcorr(y(:,i),stimSig,maxLag.*I.Fs,'coeff');
+            r(lags < 0)  = [];
             lags(lags<0) = [];
-            [R(i,s),k] = max(abs(r));
-            Rlag(i,s) = lags(k);
+            [R(i,s),k]   = max(abs(r));
+            Rlag(i,s)    = lags(k);
         end
     end
     
@@ -49,34 +94,52 @@ for pid = 1:length(Plane)
     Zlag{pid}(I.roiMaskIdx,:) = Rlag;
     Zlag{pid} = reshape(Zlag{pid},[I.nY I.nX I.nStim]);
     
+    fprintf('.')
 end
+fprintf(' done\n')
 
-%%
-
-X = [];
-for pid = 1:length(Zr)
-    X = cat(3,X,Zr{pid});
-end
-
-
-
-
+% Display results
 clf
 
-r = quantile(X(:),.999);
+Xr = []; Xlag = [];
+for pid = 1:length(Zr)
+    Xr = cat(3,Xr,Zr{pid});
+    Xlag = cat(3,Xlag,Zlag{pid});
+end
 
-% montage(X,'displayrange',r*[-1 1]);
-montage(X,'displayrange',[0 r]);
+Xlag = Xlag ./ I.Fs; % frames -> seconds
 
-xlabel('Stimulus','FontSize',16)
-ylabel('Plane','FontSize',16)
-title(sprintf('%s | maxLag = %d',I.fileRoot,maxLag),'interpreter','none','FontSize',18)
+subplot(121);
 
-colormap jet
+r = quantile(Xr(:),.999);
+montage(Xr,'displayrange',[0 r],'size',[I.nPlanes I.nStim]);
+
+xlabel(sprintf('Stimulus (1\\rightarrow%d)',I.nStim),'FontSize',14)
+ylabel({'Plane',sprintf('(%d\\leftarrow1)',I.nPlanes)},'FontSize',14)
+title(sprintf('%s | maxLag = %.1f s',I.fileRoot,maxLag),'interpreter','none','FontSize',14)
+
+colormap(gca,jet)
 h = colorbar;
-h.FontSize = 14;
-h.Label.String = 'correlation coef (\itr)';
-h.Label.FontSize = 18;
+h.FontSize = 12;
+h.Label.String = 'max corr. coef. (\itr)';
+h.Label.FontSize = 14;
+
+
+subplot(122);
+montage(Xlag,'displayrange',[0 maxLag],'size',[I.nPlanes I.nStim]);
+
+xlabel(sprintf('Stimulus (1\\rightarrow%d)',I.nStim),'FontSize',14)
+title(sprintf('%s | maxLag = %.1f s',I.fileRoot,maxLag),'interpreter','none','FontSize',14)
+
+colormap(gca,parula(7))
+h = colorbar;
+h.FontSize = 12;
+h.Label.String = '\itr_{lag} (sec)';
+h.Label.FontSize = 14;
+
+
+
+
 
 %% rank pixels by largest stimulus correlation?
 
@@ -111,7 +174,7 @@ fprintf('Wrote "%s"\n',ffn)
 %% 
 I = Plane(1).I;
 for sid = 1:I.nStim
-    v = X(:,:,sid:I.nStim:end);
+    v = Xr(:,:,sid:I.nStim:end);
     fn = sprintf('%s_Stim_%d_rMax.nii',I.fileRoot,sid);
     ffn = fullfile(I.filePath,fn);
     niftiwrite(v,ffn);
