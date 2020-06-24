@@ -84,7 +84,7 @@ X = zscore(X,0,'all');
 
 switch icaType
     case 'spatial'
-        icaData = zeros([I.nX I.nY I.nPlanes q],'like',X);
+        icaData = zeros([I.nY I.nX I.nPlanes q],'like',X);
         for k = 1:q
             px = 1;
             for i = 1:length(Plane)
@@ -94,7 +94,7 @@ switch icaType
                 
                 y(I.roiMaskIdx) = X(k,px:px+length(I.roiMaskIdx)-1);
                 
-                icaData(:,:,i,k) = reshape(y,[I.nX I.nY]);
+                icaData(:,:,i,k) = reshape(y,[I.nY I.nX]);
                 
                 px = px + length(I.roiMaskIdx);
             end
@@ -102,7 +102,7 @@ switch icaType
         
     case 'temporal'
         % todo
-%         icaData = zeros([I.nX I.nY I.nPlanes q],'like',X);
+%         icaData = zeros([I.nY I.nX I.nPlanes q],'like',X);
 %         for k = 1:q
 %             px = 1;
 %             for i = 1:length(Plane)
@@ -112,7 +112,7 @@ switch icaType
 %                 
 %                 y(I.roiMaskIdx) = X(k,px:px+length(I.roiMaskIdx)-1);
 %                 
-%                 icaData(:,:,i,k) = reshape(y,[I.nX I.nY]);
+%                 icaData(:,:,i,k) = reshape(y,[I.nY I.nX]);
 %                 
 %                 px = px + length(I.roiMaskIdx);
 %             end
@@ -236,7 +236,7 @@ rData = squeeze(mean(tcData(:,:,responseIdx,:,pid),3));
 
 rData = (rData - bData) ./ bData;
 
-rData = reshape(rData,[I.nX I.nY I.nStim q]);
+rData = reshape(rData,[I.nY I.nX I.nStim q]);
 
 m = squeeze(rData(:,:,sid,:));
 m(isnan(m)) = 0;

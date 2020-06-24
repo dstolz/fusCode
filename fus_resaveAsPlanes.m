@@ -31,8 +31,8 @@ for i = 1:n
     I.id = i;
     I.nPlanes = n;
     
-    I.nX      = size(epoch_bef,1);
-    I.nY      = size(epoch_bef,2);
+    I.nY      = size(epoch_bef,1);
+    I.nX      = size(epoch_bef,2);
     
     I.nPixels = size(Data,1);
     I.nStim   = size(Data,2);
@@ -40,8 +40,9 @@ for i = 1:n
     I.nFrames = size(Data,4);
     
     I.shapePSTF = [I.nPixels I.nStim I.nTrials I.nFrames];
-    I.shapeXYA  = [I.nX I.nY I.nStim*I.nTrials*I.nFrames];
+    I.shapeYXA  = [I.nY I.nX I.nStim*I.nTrials*I.nFrames];
     I.shapePA   = [I.nPixels I.nStim*I.nTrials*I.nFrames];
+    I.shapeFull = [I.nY I.nX I.nStim I.nTrials I.nFrames];
     
     I.dPixels = 1;
     I.dStim   = 2;
@@ -55,8 +56,8 @@ for i = 1:n
     
     I.Fs = 2.5; % Hz
     
-    I.voxelSpacing = [.1 .1 .4 1/I.Fs]; % [x,y,plane,time]
-    I.voxelDimensions = {'x' 'y' 'plane' 'time'};
+    I.voxelSpacing = [.1 .1 .4 1/I.Fs]; % [y,x,plane,time]
+    I.voxelDimensions = {'y' 'x' 'plane' 'time'};
     
     I = orderfields(I);
     

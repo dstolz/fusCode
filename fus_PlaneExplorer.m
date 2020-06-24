@@ -18,7 +18,7 @@ I = Plane.I;
 
 
 X = rms(Plane.Data,[I.dFrames, I.dStim, I.dTrials]);
-X = reshape(X,[I.nX I.nY]);
+X = reshape(X,[I.nY I.nX]);
 
 if logScale
     X = 10.*log10(X);

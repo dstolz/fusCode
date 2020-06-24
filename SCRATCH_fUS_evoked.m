@@ -43,11 +43,11 @@ for pid = 1:length(Plane)
     
     Zr{pid} = zeros([I.nPixels I.nStim]);
     Zr{pid}(I.roiMaskIdx,:) = R;
-    Zr{pid} = reshape(Zr{pid},[I.nX I.nY I.nStim]);
+    Zr{pid} = reshape(Zr{pid},[I.nY I.nX I.nStim]);
     
     Zlag{pid} = zeros([I.nPixels I.nStim]);
     Zlag{pid}(I.roiMaskIdx,:) = Rlag;
-    Zlag{pid} = reshape(Zlag{pid},[I.nX I.nY I.nStim]);
+    Zlag{pid} = reshape(Zlag{pid},[I.nY I.nX I.nStim]);
     
 end
 
@@ -83,7 +83,7 @@ h.Label.FontSize = 18;
 rThreshold = .01;
 
 I = Plane(1).I;
-stimRanked = nan([I.nX I.nY I.nStim]);
+stimRanked = nan([I.nY I.nX I.nStim]);
 for i = 1:length(Plane)
     I = Plane(i).I;
     [m,sid] = max(Zr{i},[],3);

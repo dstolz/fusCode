@@ -17,7 +17,7 @@ else
     for i = 1:length(Plane)
         I = Plane(i).I;
         
-        X = reshape(Plane(i).Data,I.shapeXYA);
+        X = reshape(Plane(i).Data,I.shapeYXA);
         
         X = dothesmooth(X,gw);
         

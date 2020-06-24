@@ -21,12 +21,6 @@ fus_resaveAsPlanes(fnRoot);
 % Plane.I        ... Structure with information about the dataset
 % Plane.Manifest ... Cell array to keep tabs on what manipulations have
 %                    been applied to the data.
-%
-% *Note: I.nX and I.nY refer to the first dimension (rows) and second
-%        dimension (columns) of the plane's image matrix (after reshaping).
-%        This is technically wrong and I'll fix it in the future.
-
-
 
 %% Load Planes
 % Load data that has already been reorganized using fus_resaveAsPlanes
@@ -188,7 +182,7 @@ for pid = 1:Plane(1).I.nPlanes
     
     % optionally apply a 'premask' to constrain the std histogram of the
     % plane
-    preMaskInd = true([I.nX I.nY]);
+    preMaskInd = true([I.nY I.nX]);
     
     if ~isempty(PreOpts.cutLeftOfCol)
         preMaskInd(:,1:PreOpts.cutLeftOfCol) = false;
@@ -223,7 +217,7 @@ for pid = 1:Plane(1).I.nPlanes
     
     % use std across all data for each pixel to compute or draw the mask
     mData = std(Data,0,[I.dFrames, I.dStim, I.dTrials]);
-    mData = reshape(mData,[I.nX I.nY]);
+    mData = reshape(mData,[I.nY I.nX]);
         
     ax = subplot(222);
     imagesc(ax,mData);
@@ -262,7 +256,7 @@ for pid = 1:Plane(1).I.nPlanes
             else
                 ind = createMask(roi);
             end
-            I.roiMaskInd = reshape(ind,[I.nX I.nY]);
+            I.roiMaskInd = reshape(ind,[I.nY I.nX]);
     end
     
     I.roiMaskInd = I.roiMaskInd & preMaskInd;

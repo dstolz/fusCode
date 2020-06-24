@@ -11,7 +11,7 @@ fprintf('Creating nifti: "%s" ...',ffn)
 v = cast([],'like',Plane(1).Data);
 for i = 1:length(Plane)
     I = Plane(i).I;
-    v(:,:,i) = reshape(X,[I.nX I.nY]);
+    v(:,:,i) = reshape(X,[I.nY I.nX]);
 end
 
 niftiwrite(v,ffn);
