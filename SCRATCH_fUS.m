@@ -11,7 +11,7 @@ fnRoot = 'Rumba\Rum078_Streaming\AllData_Streaming_rum078.mat';
 
 %% Resave original data
 % Resave data in an array of Planes with some additional info.
-% Only need to do this once.
+% Only need to do this once per dataset.
 
 fus_resaveAsPlanes(fnRoot);
 
@@ -49,9 +49,10 @@ ax.Title.Interpreter = 'none';
 % See help fus_PlaneExplorer for more options.
 
 
-
+roiType = 'rectangle';
+% roiType = 'circle';
 % roiType = 'ellipse';
-roiType = 'freehand';
+% roiType = 'freehand';
 % roiType = 'polygon'; 
 % roiType = 'assisted';
 
@@ -69,7 +70,7 @@ fus_PlaneExplorer(Plane(planeID),roiType);
     
 % Preprocessing option defaults -------------
 PreOpts.preStimFrames   = 1:3; %1:10; % [] = no baseline correction
-PreOpts.maskType        = 'freehand'; % options: 'freehand','assisted','auto','none'
+PreOpts.maskType        = 'none'; % options: 'freehand','assisted','auto','none'
 PreOpts.pixelThreshold  = .8; % used for auto only
 
 % Set the following cut* fields to exclude parts of the plane from the
@@ -120,21 +121,25 @@ for pid = 1:Plane(1).I.nPlanes
     
     % Optional Temporal high/low pass filtering
     if ~isempty(PreOpts.hpFc)
+        fprintf('Applying high-pass filter at %f Hz ...',PreOpts.hpFc)
         Data = highpass(Data,PreOpts.hpFc,I.Fs);
         for j = 1:I.nStim
             for k = 1:I.nTrials
-                Data(:,j,k,:) = highpass(squeeze(Data(:,j,k,:)));
+                Data(:,j,k,:) = highpass(squeeze(Data(:,j,k,:))',PreOpts.hpFc,I.Fs)';
             end
         end
         Plane(pid).Manifest{end+1} = sprintf('Applied high-pass filter at %f Hz',PreOpts.hpFc);
+        fprintf(' done\n')
     end
     if ~isempty(PreOpts.lpFc)
+        fprintf('Applying low-pass filter at %f Hz ...',PreOpts.lpFc)
         for j = 1:I.nStim
             for k = 1:I.nTrials
-                Data(:,j,k,:) = lowpass(squeeze(Data(:,j,k,:)));
+                Data(:,j,k,:) = lowpass(squeeze(Data(:,j,k,:))',PreOpts.lpFc,I.Fs)';
             end
         end
         Plane(pid).Manifest{end+1} = sprintf('Applied low-pass filter at %f Hz',PreOpts.lpFc);
+        fprintf(' done\n')
     end
     
     
