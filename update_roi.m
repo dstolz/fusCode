@@ -1,4 +1,4 @@
-function update_roi(roi,event,Plane,figH)
+function update_roi(roi,event,Plane,imAx)
 
 % DJS 2020
 
@@ -6,7 +6,10 @@ function update_roi(roi,event,Plane,figH)
 if ~isempty(roi.UserData) && etime(clock,roi.UserData) < .1, return; end % be nice to the cpu
 
 roi.UserData = clock;
-    
+
+
+figH = imAx.Parent;
+
 I = Plane.I;
 
 
@@ -37,9 +40,9 @@ miROI = miROI';
 ax = findobj(figH,'tag','ROITimePlot');
 buildFlag = isempty(ax);
 if buildFlag
-    ax = axes('Units','Normalized','Position',[.2 .1 .7 .3]);
+    ax = axes(figH,'Units','Normalized','Position',[.2 .1 .7 .3]);
 
-    ax2 = axes(gcf,'units','normalized','position',ax.Position,'color','none', ...
+    ax2 = axes(figH,'units','normalized','position',ax.Position,'color','none', ...
         'ytick',[],'tag','ROITimePlot2');
     grid(ax,'on');
     

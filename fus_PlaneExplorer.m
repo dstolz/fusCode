@@ -48,7 +48,7 @@ roi.LabelVisible = 'off';
 
 if isempty(roi), return; end
 
-update_roi(roi,[],Plane,f);
+update_roi(roi,[],Plane,ax);
 
-addlistener(roi,'MovingROI',@(src,evnt) update_roi(src,evnt,Plane,f));
-addlistener(roi,'ROIMoved',@(src,evnt) update_roi(src,evnt,Plane,f));
+addlistener(roi,'MovingROI',@(src,evnt) update_roi(src,evnt,Plane,ax));
+addlistener(roi,'ROIMoved',@(src,evnt) update_roi(src,evnt,Plane,ax));
