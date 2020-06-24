@@ -16,14 +16,21 @@ fnRoot = 'Rumba\Rum078_Streaming\AllData_Streaming_rum078.mat';
 fus_resaveAsPlanes(fnRoot);
 
 
+% Plane is a structure array with the following fields:
+% Plane.Data     ... 5D matrix with dims: Pixels x Stim x Trials x Frames
+% Plane.I        ... Structure with information about the dataset
+% Plane.Manifest ... Cell array to keep tabs on what manipulations have
+%                    been applied to the data.
+%
+% *Note: I.nX and I.nY refer to the first dimension (rows) and second
+%        dimension (columns) of the plane's image matrix (after reshaping).
+%        This is technically wrong and I'll fix it in the future.
+
 
 
 %% Load Planes
 % Load data that has already been reorganized using fus_resaveAsPlanes
 Plane = fus_loadPlanes(fnRoot);
-
-
-
 
 
 
