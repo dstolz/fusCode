@@ -32,12 +32,15 @@
 stimFrames = [20 25]; % frames when stimulus is presented
 
 maxLag = 5; % seconds
+% maxLag = 0; % seconds
 
 % rectifyFcn = [];
 % rectifyFcn = @abs;
 rectifyFcn = @(a) a.^2;
 
 
+% threshold for ranking each pixel by max stim correlation
+rThreshold = .5; 
 
 
 
@@ -101,18 +104,19 @@ fprintf(' done\n')
 % Display results
 clf
 
-Xr = []; Xlag = [];
+rMax = []; rLag = [];
 for pid = 1:length(Zr)
-    Xr = cat(3,Xr,Zr{pid});
-    Xlag = cat(3,Xlag,Zlag{pid});
+    rMax = cat(3,rMax,Zr{pid});
+    rLag = cat(3,rLag,Zlag{pid});
 end
 
-Xlag = Xlag ./ I.Fs; % frames -> seconds
+rLag = rLag ./ I.Fs; % frames -> seconds
 
-subplot(121);
-
-r = quantile(Xr(:),.999);
-montage(Xr,'displayrange',[0 r],'size',[I.nPlanes I.nStim]);
+if maxLag > 0
+    subplot(121);
+end
+r = quantile(rMax(:),.999);
+montage(rMax,'displayrange',[0 r],'size',[I.nPlanes I.nStim]);
 
 xlabel(sprintf('Stimulus (1\\rightarrow%d)',I.nStim),'FontSize',14)
 ylabel({'Plane',sprintf('(%d\\leftarrow1)',I.nPlanes)},'FontSize',14)
@@ -124,29 +128,32 @@ h.FontSize = 12;
 h.Label.String = 'max corr. coef. (\itr)';
 h.Label.FontSize = 14;
 
-
-subplot(122);
-montage(Xlag,'displayrange',[0 maxLag],'size',[I.nPlanes I.nStim]);
-
-xlabel(sprintf('Stimulus (1\\rightarrow%d)',I.nStim),'FontSize',14)
-title(sprintf('%s | maxLag = %.1f s',I.fileRoot,maxLag),'interpreter','none','FontSize',14)
-
-colormap(gca,parula(7))
-h = colorbar;
-h.FontSize = 12;
-h.Label.String = '\itr_{lag} (sec)';
-h.Label.FontSize = 14;
-
-
-
+if maxLag > 0
+    subplot(122);
+    montage(rLag,'displayrange',[0 maxLag],'size',[I.nPlanes I.nStim]);
+    
+    xlabel(sprintf('Stimulus (1\\rightarrow%d)',I.nStim),'FontSize',14)
+    title(sprintf('%s | maxLag = %.1f s',I.fileRoot,maxLag),'interpreter','none','FontSize',14)
+    
+    colormap(gca,parula(7))
+    h = colorbar;
+    h.FontSize = 12;
+    h.Label.String = '\itr_{lag} (sec)';
+    h.Label.FontSize = 14;
+end
 
 
-%% rank pixels by largest stimulus correlation?
 
-rThreshold = .01;
 
+%% Rank pixels by largest stimulus correlation
+
+figure('color','w');
 I = Plane(1).I;
 stimRanked = nan([I.nY I.nX I.nStim]);
+
+col = ceil(sqrt(I.nPlanes+1));
+row = ceil((I.nPlanes+1)/col);
+
 for i = 1:length(Plane)
     I = Plane(i).I;
     [m,sid] = max(Zr{i},[],3);
@@ -154,16 +161,35 @@ for i = 1:length(Plane)
     sid(ind) = 0; % 0 = background
     sid(~I.roiMaskInd) = 0;
     stimRanked(:,:,i) = sid;
+   
+    ax = subplot(row,col,i);
+    imagesc(stimRanked(:,:,i),'parent',ax);
+    axis(ax,'image')
+    set(ax,'clim',[0 I.nStim],'xtick',[],'ytick',[]);
     
-    subplot(2,3,i)
-    imagesc(sid);
-    axis image
-    title(sprintf('Plane %d',I.id))
-    drawnow
+    ax.XAxis.Label.String = sprintf('Plane %d',i);
+    ax.XAxis.Label.Color = [0 0 0];
 end
-colormap([1 1 1; prism(I.nStim)]);
 
-%%
+% montage(stimRanked,'DisplayRange',[-.5 I.nStim+.5],'Size',[1 I.nPlanes]);
+colormap(gcf,[1 1 1; jet(I.nStim)]);
+
+ax = subplot(row,col,I.nPlanes+1);
+ax.XAxis.Color = 'none';
+ax.YAxis.Color = 'none';
+ax.CLim = [-.5 I.nStim+.5];
+
+h = colorbar(ax,'Location','west');
+ 
+h.Ticks = 1:I.nStim;
+h.TickDirection = 'out';
+h.Label.String = 'Stimulus #';
+h.Label.FontSize = 12;
+
+
+
+
+%% Write stimRanked to a NIfTI file
 ffn = fullfile(I.filePath,sprintf('%s_stimRanked.nii',I.fileRoot));
 niftiwrite(stimRanked,ffn);
 ninfo = niftiinfo(ffn);
@@ -171,58 +197,23 @@ ninfo.PixelDimensions = I.voxelSpacing(1:3);
 niftiwrite(stimRanked,ffn,ninfo);
 fprintf('Wrote "%s"\n',ffn)
 
-%% 
+
+
+
+
+%% Write a NIfTI for max correlation for each stimuls
 I = Plane(1).I;
 for sid = 1:I.nStim
-    v = Xr(:,:,sid:I.nStim:end);
+    v = rMax(:,:,sid:I.nStim:end);
     fn = sprintf('%s_Stim_%d_rMax.nii',I.fileRoot,sid);
     ffn = fullfile(I.filePath,fn);
+    fprintf('Writing "%s" ...',ffn)
     niftiwrite(v,ffn);
     ninfo = niftiinfo(ffn);
     ninfo.PixelDimensions = I.voxelSpacing(1:3);
     niftiwrite(v,ffn,ninfo);
+    fprintf(' done\n')
 end
-fprintf(' done\n')
-
-
-%%
-    subplot(2,3,pid)
-    
-    mR = cellfun(@(a,b) mean(a(b,:)),R,Rind,'uni',0);
-    mR = cell2mat(mR)';
-    
-    xl = [1 size(mR,1)];
-    yl = [-1.1 1.1] .* max(abs(mR(:)));
-    
-    plot(xl,[0 0],'-k','linewidth',2);
-    grid on
-    hold on
-    patch(stimFrames([1 2 2 1 1]),yl([1 1 2 2 1]),[.4 1 .4],'linestyle','none');
-    h = plot(mR,'linewidth',2);
-    hold off
-    xlim(xl);
-    ylim(yl);
-    
-    title(sprintf('Plane %d',pid));
-    
-    if pid == 1
-        lgd = legend(h,cellstr(num2str((1:I.nStim)','stim %d\n'))','location','best');
-        lgd.Orientation = 'horizontal';
-    end
-   
-    [c,r]=ind2sub([3 2],pid);
-    if c == 1
-        ylabel('z-score');
-    end
-    if r == 2
-        xlabel('frames');
-    end
-% end
-
-
-
-
-%% maximum evoked spatial response
 
 
 
