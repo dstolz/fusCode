@@ -59,6 +59,9 @@ for i = 1:n
     I.voxelSpacing = [.1 .1 .4 1/I.Fs]; % [y,x,plane,time]
     I.voxelDimensions = {'y' 'x' 'plane' 'time'};
     
+    I.roiMaskInd = true(I.nPixels,1);
+    I.roiMaskIdx = find(I.roiMaskInd);
+    
     I = orderfields(I);
     
     

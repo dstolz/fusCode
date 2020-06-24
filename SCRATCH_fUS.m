@@ -4,8 +4,8 @@ cd(pth)
 
 % Specify the "root" of your filename.  Just the mat file downloaded from
 % Ali's Google drive.
-fnRoot = 'Rumba\Rum078_Streaming\AllData_Streaming_rum078.mat';
-
+% fnRoot = 'Rumba\Rum078_Streaming\AllData_Streaming_rum078.mat';
+fnRoot = 'Rumba\Rum074_Streaming\AllData_Streaming_rum074.mat';
 
 
 
@@ -246,7 +246,7 @@ for pid = 1:Plane(1).I.nPlanes
             ind = bwareafilt(ind,1);
             I.roiMaskInd = ind;
         case 'none'
-            I.roiMaskInd = true(I.nX,I.nY);
+            I.roiMaskInd = true(I.nY,I.nX);
             
         otherwise
             fprintf('Draw ROI on top right image\n')

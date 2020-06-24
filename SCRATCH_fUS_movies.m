@@ -8,7 +8,7 @@ for StimID = 1:I.nStim
         I = Plane(pid).I;
         
 
-        x = reshape(squeeze(Plane(pid).Data(:,StimID,:,:)),I.nX,I.nY,I.nTrials,I.nFrames);
+        x = reshape(squeeze(Plane(pid).Data(:,StimID,:,:)),I.nY,I.nX,I.nTrials,I.nFrames);
         M{pid,StimID} = squeeze(mean(x,I.dTrials));
         
         
