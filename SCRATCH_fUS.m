@@ -1,3 +1,13 @@
+%% Preprocessing script and some other useful tools
+
+% make sure code is on path
+if isempty(which('fus_resaveAsPlanes'))
+    fprintf(2,'Make sure you add the fusCode directory to Matlab''s path!\n')
+    fprintf(2,'See <a href="matlab:help addpath">help addpath</a> or use the <a href="matlab:pathtool">pathtool</a>\n')
+end
+
+
+
 %% Set whwere you data lives
 pth = 'C:\Users\Daniel\Documents\MATLAB\FigurePopoutData';
 cd(pth)
@@ -5,9 +15,8 @@ cd(pth)
 % Specify the "root" of your filename.  Just the mat file downloaded from
 % Ali's Google drive.
 % fnRoot = 'Rumba\Rum078_Streaming\AllData_Streaming_rum078.mat';
-fnRoot = 'Rumba\Rum074_Streaming\AllData_Streaming_rum074.mat';
-
-
+% fnRoot = 'Rumba\Rum074_Streaming\AllData_Streaming_rum074.mat';
+fnRoot = 'Rumba\Rum074_Tonotopy\AllData_Tonotopics_rum074.mat';
 
 %% Resave original data
 % Resave data in an array of Planes with some additional info.
@@ -49,6 +58,7 @@ ax.Title.Interpreter = 'none';
 % This can be run at anypoint during analysis.
 % See help fus_PlaneExplorer for more options.
 
+planeID = 2;
 
 roiType = 'rectangle';
 % roiType = 'circle';
@@ -57,7 +67,6 @@ roiType = 'rectangle';
 % roiType = 'polygon'; 
 % roiType = 'assisted';
 
-planeID = 1;
 
 fus_PlaneExplorer(Plane(planeID),roiType);
 
@@ -68,10 +77,14 @@ fus_PlaneExplorer(Plane(planeID),roiType);
 
 
 %% Preprocess Data
-    
+
+% Uncomment to reload planes each time you preprocess the data
+Plane = fus_loadPlanes(fnRoot); 
+
+
 % Preprocessing option defaults -------------
 PreOpts.preStimFrames   = 1:3; %1:10; % [] = no baseline correction
-PreOpts.maskType        = 'none'; % options: 'freehand','assisted','auto','none'
+PreOpts.maskType        = 'auto'; % options: 'freehand','assisted','auto','none'
 PreOpts.pixelThreshold  = .8; % used for auto only
 
 % Set the following cut* fields to exclude parts of the plane from the
@@ -89,7 +102,7 @@ PreOpts.lpFc    = []; % Hz
 PreOpts.hpFc    = []; % Hz
 % PreOpts.lpFc  = 1.2; % Hz
 % PreOpts.hpFc  = 0.1; % Hz
-PreOpts.detrendData = false; % applies linear detrend for each pixel on a trial-by-trial basis
+PreOpts.detrendData = true; % applies linear detrend for each pixel on a trial-by-trial basis
 
 
 
@@ -168,7 +181,8 @@ for pid = 1:Plane(1).I.nPlanes
     end
     
     ax = subplot(221);
-    fus_viewPlanes(Plane(pid),ax);
+    imagesc(ax,mean(reshape(Plane(pid).Data,I.shapeYXA),3));
+    axis image
     colormap(ax,'hot');
     ax.Title.String = [I.fileRoot sprintf(' - Plane %d',I.id)];
     ax.Title.Color = 'w';
@@ -219,14 +233,6 @@ for pid = 1:Plane(1).I.nPlanes
     mData = std(Data,0,[I.dFrames, I.dStim, I.dTrials]);
     mData = reshape(mData,[I.nY I.nX]);
         
-    ax = subplot(222);
-    imagesc(ax,mData);
-    colormap(ax,'parula');
-    axis(ax,'image');
-    ax.Title.String = [I.fileRoot ' - std'];
-    ax.Title.Color = 'w';
-    ax.Title.Interpreter = 'none';
-    drawnow
     
     
     
@@ -261,6 +267,26 @@ for pid = 1:Plane(1).I.nPlanes
     
     I.roiMaskInd = I.roiMaskInd & preMaskInd;
 
+    [y,x] = find(bwperim(I.roiMaskInd));
+    I.roiMaskPerimeterXY = [x y];
+
+    ax = subplot(222);
+    imagesc(ax,10*log10(mData));
+    colormap(ax,'parula');
+    axis(ax,'image');
+    ax.Title.String = [I.fileRoot ' - std'];
+    ax.Title.Color = 'w';
+    ax.Title.Interpreter = 'none';
+    hold(ax,'on');
+    plot(ax,I.roiMaskPerimeterXY(:,1),I.roiMaskPerimeterXY(:,2),'.r');
+    hold(ax,'off');
+    drawnow
+    
+    ax = subplot(221);
+    hold(ax,'on');
+    plot(ax,I.roiMaskPerimeterXY(:,1),I.roiMaskPerimeterXY(:,2),'.c');
+    hold(ax,'off');
+    
     I.roiMaskIdx = find(I.roiMaskInd(:));
     
     fprintf('"%s" Preprocessing Plane %d of %d ...',I.fileRoot,I.id,I.nPlanes)
@@ -304,9 +330,6 @@ for pid = 1:Plane(1).I.nPlanes
     fprintf(' done\n')
     
 
-%     fprintf('"%s" Saving with Data ...',fnPlane)
-%     save(fnPlane,'-append','-struct','P','Data','I');
-%     fprintf(' done\n')
     
     I.PreOpts = PreOpts;
 
