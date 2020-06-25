@@ -1,27 +1,7 @@
+%% Add FastICA code directory to Matlab's path
+pth = fileparts(which('fus_resaveAsPlanes'));
+addpath(fullfile(pth,'FastICA_25'))
 
-
-
-addpath('C:\Users\Daniel\src\FastICA_25')
-
-
-%% Prep data by appending means of stimuli
-
-X = cast([],'like',Plane(1).Data);
-
-for i = 1:length(Plane)
-    I = Plane(i).I;
-    
-    y = squeeze(mean(Plane(i).Data(I.roiMaskIdx,:,:,:),I.dTrials));
-    y = reshape(y,[length(I.roiMaskIdx) I.nStim*I.nFrames]);
-        
-    X = cat(1,X,y);
-end
-clear y
-% X = X';
-% X = zscore(X);
-% X = X - mean(X);
-
-whos X
 
 %% Prep data one mean stimulus at a time
 
@@ -36,48 +16,43 @@ X = cast([],'like',Plane(1).Data);
 for i = 1:length(Plane)
     I = Plane(i).I;
     
-    y = squeeze(mean(Plane(i).Data(I.roiMaskIdx,stimID,:,:),I.dTrials));
-    y = reshape(y,[length(I.roiMaskIdx) I.nFrames]);
+%     y = squeeze(mean(Plane(i).Data(I.roiMaskIdx,stimID,:,:),I.dTrials));
+%     y = reshape(y,[length(I.roiMaskIdx) I.nFrames]);
+
+    y = Plane(i).Data(I.roiMaskIdx,stimID,:,:);
+    y = reshape(y,[length(I.roiMaskIdx) I.nTrials*I.nFrames]);
         
     X = cat(1,X,y);
 end
 clear y
-% X = X';
-% X = zscore(X);
-% X = X - mean(X);
 
-switch icaType
-    case 'spatial'
-        X = X';
-end
+
+if isequal(icaType,'spatial'), X = X'; end
 
 whos X
 
 %% Reduce dimensionality using PCA
 
-[E,S,L,~,~,mu] = pca(X,'economy',false);
+[E,S,L,~,exv,mu] = pca(X);
 
-ev = cumsum(L)./sum(L);
+inclComp = find(cumsum(exv)>90,1);
 
-% plot(ev,'-o');
-% grid on
-
-inclComp = max(find(ev>.9,1),10) + 1;
-
-fprintf('PCA dimensionality reduction using %d components containing %.3f%% of var\n',inclComp,ev(inclComp)*100)
+fprintf('PCA dimensionality reduction using %d components containing %.3f%% of var\n',inclComp,sum(exv(1:inclComp)))
 
 Xh = S(:,1:inclComp) * E(:,1:inclComp)';
 Xh = bsxfun(@plus,Xh,mu);
 
-%% Run fastica - each row is one observed signal - pixels x samples
+%% Run fastica - each row is one observed signal 
+%       - spatial:  pixels x samples
+%       - temporal: samples x pixels
 
-q = inclComp - 1; % # ICA components to extract
-X = fastica(Xh,'numOfIC',q,'approach', 'symm',  ...
-    'g', 'tanh','finetune','tanh','stabilization','on', ...
-    'maxFinetune',1000,'epsilon',1e-5, ...
+% q = inclComp; % # ICA components to extract
+q = 10;
+X = fastica(Xh','numOfIC',q,'approach', 'symm',  ...
+    'g','tanh','finetune','tanh','stabilization','on', ...
     'displayMode','off');
 
-X = zscore(X,0,'all');
+% X = zscore(X,0,'all');
 
 %% Reconstruction from Components
  I = Plane(1).I;
