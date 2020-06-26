@@ -8,9 +8,11 @@ if nargin < 2 || isempty(ffn),          ffn = 'fus_MeanVolume.nii'; end
 fprintf('Creating nifti: "%s" ...',ffn)
 
 % create nifti mean volume
-v = cast([],'like',Plane(1).Data);
+I = Plane(1).I;
+v = nan([I.nY I.nX I.nPlanes],'like',Plane(1).Data);
 for i = 1:length(Plane)
     I = Plane(i).I;
+    X = mean(Plane(i).Data,[I.dStim I.dTrials I.dFrames]);
     v(:,:,i) = reshape(X,[I.nY I.nX]);
 end
 
