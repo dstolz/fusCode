@@ -1,40 +1,34 @@
-function Plane = fus_smoothSpatial(Plane,smoothFactor)
+function Plane = fus_smoothSpatial(Plane,gwN,gwSD)
 % Plane = fus_smoothSpatial(Plane,smoothFactor)
 %
-% smoothFactor  -  number of pixes for within plane 2d convolution with
-%                  gaussian kernel (default = 5)
+% gwN  -  number of pixes for within plane 2d convolution with gaussian
+%           kernel (default = 3)
 
 
-if nargin < 2 || isempty(smoothFactor), smoothFactor = 5; end
+if nargin < 2 || isempty(gwN),  gwN = 3;    end
+if nargin < 3 || isempty(gwSD), gwSD = 0.5; end
 
-gw = gausswin(smoothFactor);
+switch length(gwN) 
+    case 1
+        gwN = [gwN gwN 1];
+    case 2
+        gwN = [gwN 1];        
+end
+
 
 if isnumeric(Plane) % treat as a matrix
-    for i = 1:size(Plane,3)
-        Plane(:,:,i) = dothesmooth(Plane(:,:,i),gw);
-    end
+    Plane = smooth3(Plane,'gaussian',gwN,gwSD);
 else
     for i = 1:length(Plane)
         I = Plane(i).I;
         
         X = reshape(Plane(i).Data,I.shapeYXA);
         
-        X = dothesmooth(X,gw);
+        X = smooth3(X,'gaussian',gwN,gwSD);
         
         Plane(i).Data = reshape(X,I.shapePSTF);
         Plane(i).Manifest{end+1} = sprintf('In-plane smoothed; smoothFactor = %d',smoothFactor);
     end
 end
 
-end
-
-
-function X = dothesmooth(X,gw)
-
-for j = 1:size(X,3)
-    y = X(:,:,j);
-    nv = max(abs(y(:)));
-    y = conv2(gw,gw',y,'same');
-    X(:,:,j) = y ./ max(abs(y(:))) .* nv;
-end
 end

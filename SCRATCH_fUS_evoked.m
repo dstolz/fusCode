@@ -23,15 +23,12 @@
 % maximum cross-correlation coefficient (for each pixel) and the lag (in
 % seconds) of that value.
 %
-% I have not seen any characterization of the fUS haemodynamic function.
-% If we had this, then we could convolve it with the stimulus vector to
-% extract a more accurate expectation of the brain's response.  This has
-% been done with the haemodynamic response function for the BOLD response
-% in fMRI, but it's not certain this is the same for fUS imaging.
 
-stimFrames = [20 25]; % frames when stimulus is presented
 
-maxLag = 5; % seconds
+% stimFrames = [20 25]; % frames when stimulus is presented
+stimFrames = [10 13];
+
+maxLag = 6; % seconds
 % maxLag = 0; % seconds
 
 % rectifyFcn = [];
@@ -39,12 +36,13 @@ maxLag = 5; % seconds
 rectifyFcn = @(a) a.^2;
 
 
+
+alpha = .001;
+
+
+
 % threshold for ranking each pixel by max stim correlation
 rThreshold = .5; 
-
-
-
-
 
 
 
@@ -56,52 +54,63 @@ stimSig(stimFrames(1):stimFrames(2)) = 1;
 
 maxLag = ceil(maxLag.*I.Fs)./I.Fs; % make sure maxLag is an integer
 
+maxLagFrames = maxLag.*I.Fs;
+
 clf
 set(gcf,'color','w')
 
-Zr = cell(size(Plane));
-Zlag = Zr;
+P = nan([I.nY I.nX I.nPlanes]);
+F = P;
 for pid = 1:length(Plane)
     
     D = Plane(pid).Data;
     I = Plane(pid).I;       
 
-    R = zeros([length(I.roiMaskIdx) I.nStim]);
-    Rlag = R;
-
-    for s = 1:I.nStim
-        y = squeeze(mean(D(:,s,:,:),I.dTrials));
-        
-        y = y(I.roiMaskIdx,:)';
-                
-        if ~isempty(rectifyFcn)
-            y = feval(rectifyFcn,y);
-        end
-        
-        for i = 1:size(y,2)
-            [r,lags] = xcorr(y(:,i),stimSig,maxLag.*I.Fs,'coeff');
-            r(lags < 0)  = [];
-            lags(lags<0) = [];
-            [R(i,s),k]   = max(abs(r));
-            Rlag(i,s)    = lags(k);
-        end
+    D = D(I.roiMaskIdx,:,:,:);
+    
+    if ~isempty(rectifyFcn)
+        D = feval(rectifyFcn,D);
     end
     
     
+    % find peak xcorr for each trial
+    r = zeros(length(I.roiMaskIdx),I.nStim,I.nTrials,'single');
+    lag = r;
+    for s = 1:I.nStim        
+        for i = 1:I.nTrials
+            [r(:,s,i),lag(:,s,i)] = fusd_xcorrMax(squeeze(D(:,s,i,:)),stimSig,maxLagFrames);
+        end
+    end
     
-    Zr{pid} = zeros([I.nPixels I.nStim]);
-    Zr{pid}(I.roiMaskIdx,:) = R;
-    Zr{pid} = reshape(Zr{pid},[I.nY I.nX I.nStim]);
+%     % apply Fisher Z-transform to Pearson correlation coefs
+%     zr = .5*(log(1+r) - log(1-r));
+%     zrm = mean(zr,3);
+%     [zrmx,stimID] = max(zrm,[],2);
     
-    Zlag{pid} = zeros([I.nPixels I.nStim]);
-    Zlag{pid}(I.roiMaskIdx,:) = Rlag;
-    Zlag{pid} = reshape(Zlag{pid},[I.nY I.nX I.nStim]);
+    % compute anova for each pixel across stimuli
+    [p,f,stats] = fusd_anova(r);
+    
+%     [corrected_p, h]=bonf_holm(p,.05);
+    
+    mp = nan([I.nPixels 1]);
+    mp(I.roiMaskIdx) = p;
+    
+    mf = nan([I.nPixels 1]);
+    mf(I.roiMaskIdx) = f;
+    
+    P(:,:,pid) = reshape(mp,[I.nY I.nX]);
+    F(:,:,pid) = reshape(mf,[I.nY I.nX]);
     
     fprintf('.')
 end
 fprintf(' done\n')
 
-% Display results
+%%
+pInd = P < alpha;
+
+montage(P,'Size',[1 size(P,3)],'DisplayRange',[0 .1])
+colormap jet
+%% Display results
 clf
 
 rMax = []; rLag = [];
@@ -116,7 +125,9 @@ if maxLag > 0
     subplot(121);
 end
 r = quantile(rMax(:),.999);
-montage(rMax,'displayrange',[0 r],'size',[I.nPlanes I.nStim]);
+rMaxIm = imtile(rMax,'GridSize',[I.nPlanes I.nStim]);
+iamgesc(rMaxIm);
+axis image
 
 xlabel(sprintf('Stimulus (1\\rightarrow%d)',I.nStim),'FontSize',14)
 ylabel({'Plane',sprintf('(%d\\leftarrow1)',I.nPlanes)},'FontSize',14)
@@ -135,12 +146,15 @@ if maxLag > 0
     xlabel(sprintf('Stimulus (1\\rightarrow%d)',I.nStim),'FontSize',14)
     title(sprintf('%s | maxLag = %.1f s',I.fileRoot,maxLag),'interpreter','none','FontSize',14)
     
-    colormap(gca,parula(7))
+    colormap(gca,parula)
     h = colorbar;
     h.FontSize = 12;
     h.Label.String = '\itr_{lag} (sec)';
     h.Label.FontSize = 14;
 end
+
+
+%% Create a stimulus selectivity index
 
 
 

@@ -16,13 +16,9 @@ if nargin < 3 || isempty(logScale), logScale = true;     end
 
 I = Plane.I;
 
+X = Plane.Structural;
 
-X = rms(Plane.Data,[I.dFrames, I.dStim, I.dTrials]);
-X = reshape(X,[I.nY I.nX]);
-
-if logScale
-    X = 10.*log10(X);
-end
+if logScale, X = log10(X); end
 
 f = figure('color','w');
 f.Position([3 4]) = [500 600];
@@ -30,14 +26,18 @@ movegui(f)
 
 ax = axes(f,'Units','Normalized','Position',[.1 .5 .8 .4],'Tag','PlaneImage');
 
-imagesc(ax,X);
-axis image
-set(gca,'xtick',[],'ytick',[]);
-colormap hot
 
+imagesc(ax,X);
+axis(ax,'image')
+set(ax,'xtick',[],'ytick',[]);
+colormap(ax,bone(512))
+
+hold(ax,'on')
+plot(ax,I.roiMaskPerimeterXY(:,1),I.roiMaskPerimeterXY(:,2),'.c');
+hold(ax,'off')
 
 t = sprintf('%s | Plane %d',I.fileRoot,I.id);
-title(t,'Interpreter','none')
+title(ax,t,'Interpreter','none')
 
 fprintf('Click the image to create an ROI.\nUse right-click for additional options.\n')
 

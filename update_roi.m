@@ -66,7 +66,7 @@ if isempty(zh)
         'Tag','zeroline');
 end
 
-cm = lines(I.nStim);
+cm = parula(I.nStim);
 
 h = findobj(ax,'-regexp','tag','stimline*');
 if isempty(h)

@@ -12,6 +12,12 @@ fprintf('resaving to individual files for each plane ...\n')
 
 epoch_bef = single(epoch_bef);
 
+isBoubenec = startsWith(fnRoot,'Boubenec');
+
+if isBoubenec
+    fprintf(2,'This is data from "Boubenec et al, 2018" and may have some different voxel dimensions.\n')
+end
+
 n = size(epoch_bef,6);
 for i = 1:n
     fnNew = sprintf('%s_Plane_%d.mat',fnRoot,i);
@@ -54,24 +60,35 @@ for i = 1:n
     I.fileRoot     = fnRoot;
     I.fileOriginal = ffn;
     
-    I.Fs = 2.5; % Hz
+    if isBoubenec
+        I.Fs = 1;
+    else
+        I.Fs = 2.5; % Hz
+    end
     
     I.voxelSpacing = [.1 .1 .4 1/I.Fs]; % [y,x,plane,time]
     I.voxelDimensions = {'y' 'x' 'plane' 'time'};
     
-    I.roiMaskInd = true(I.nPixels,1);
+    I.roiMaskInd = true([I.nY I.nX]);
     I.roiMaskIdx = find(I.roiMaskInd);
+    [y,x] = ind2sub([I.nY I.nX],find(bwperim(I.roiMaskInd)));
+    I.roiMaskPerimeterXY = [x y];
+    
+    I.transform = affine2d;
     
     I = orderfields(I);
     
     
+    Structural = mean(Data,[I.dStim I.dTrials I.dFrames]);
+    Structural = reshape(Structural,[I.nY I.nX]);
     
+    Overlay = [];
     
     Manifest = {'Resaved data by plane'};
     
     ffns{i} = fullfile(pn,fnNew);
     
-    save(ffns{i},'Data','I','Manifest','-nocompression','-v7.3');
+    save(ffns{i},'Data','Structural','I','Manifest','Overlay','-nocompression','-v7.3');
     fprintf('done\n')    
 end
 

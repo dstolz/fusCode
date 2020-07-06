@@ -10,7 +10,7 @@ if nargin < 3 || isempty(logTransform), logTransform = true; end
 
 if isstruct(Plane)
     I = Plane(1).I;
-    X = arrayfun(@(a) rms(a.Data,[a.I.dTrials a.I.dFrames a.I.dStim]),Plane,'uni',0);
+    X = arrayfun(@(a) mean(a.Data,[a.I.dTrials a.I.dFrames a.I.dStim]),Plane,'uni',0);
     X = cell2mat(X);
     X = reshape(X,[I.nY I.nX length(Plane)]);
 else
