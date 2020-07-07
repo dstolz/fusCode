@@ -2,7 +2,7 @@ classdef Plane < handle & matlab.mixin.SetGet
     
     properties
         id       (1,1) uint8 = 1;
-        alias    (1,1) string = "Plane_1";        
+        Name     (1,1) string = "Plane_1";        
         
     end
     
@@ -65,6 +65,9 @@ classdef Plane < handle & matlab.mixin.SetGet
     
     
     methods
+        explorer(obj,roiType,logScale)
+        explorer_update(obj,roi,event,imAx)
+
         function obj = Plane(data,dataDims,id)
             if nargin < 1, data = [];     end
             if nargin < 2, dataDims = ""; end

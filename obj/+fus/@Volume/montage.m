@@ -14,7 +14,7 @@ function [X,h] = montage(obj,ax,varargin)
 
 % DJS 2020
 
-if nargin < 2 || isempty(ax), ax = gca; end
+if nargin < 2, ax = []; end
 
 
 opts.datafield     = 'Structural';
@@ -25,6 +25,8 @@ opts.maskalpha     = .5;
 for i = 1:2:length(varargin)
     opts.(lower(varargin{i})) = varargin{i+1};
 end
+
+if opts.display && isempty(ax), ax = gca; end
 
 Plane = obj.Plane(obj.active);
 
