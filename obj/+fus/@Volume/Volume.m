@@ -1,5 +1,10 @@
 classdef Volume < handle & matlab.mixin.Copyable
     
+    
+    properties
+        UserData
+    end
+    
     properties (SetObservable = true)
         Plane   (:,1) fus.Plane
         
@@ -54,6 +59,14 @@ classdef Volume < handle & matlab.mixin.Copyable
                 end
             end
         end
+        
+        
+        
+        function process_planes(obj,func,varargin)
+            arrayfun(@(a) func(a,varargin{:}),obj.Plane);
+        end
+        
+        
     end % methods (Public)
     
     

@@ -2,6 +2,8 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable
     
     properties
         id       (1,1) uint16 = 1;
+        
+        UserData
     end
     
     properties (SetObservable)
