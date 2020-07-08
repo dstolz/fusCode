@@ -1,22 +1,19 @@
-classdef Plane < handle & matlab.mixin.SetGet
+classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable
     
     properties
-        id       (1,1) uint8 = 1;
-        Name     (1,1) string = "Plane_1";        
-        
+        id       (1,1) uint16 = 1;
     end
     
     properties (SetObservable)
-       
+        Mask        (1,1) %fus.Mask
         
-        Mask        (1,1) fus.Mask
         
-                
         Structural  (:,:) {mustBeNumeric}
         
         bgPlane     (1,1) % fus.Plane
         fgPlane     (1,1) % fus.Plane
-            
+        
+        useSpatialTform     (1,1) logical = true;
     end
     
     properties (SetObservable,AbortSet)
@@ -30,7 +27,6 @@ classdef Plane < handle & matlab.mixin.SetGet
         spatialCoords       (1,3) {mustBeFinite,mustBeNonempty} = [0 0 0];
         spatialUnits        (1,1) string = "mm";
         spatialTform        (1,1) affine2d = affine2d;
-        useSpatialTform     (1,1) logical = true;
     end
     
     properties (Dependent)
@@ -40,7 +36,11 @@ classdef Plane < handle & matlab.mixin.SetGet
         dimSizes
         dimOrder
         
+        nDims
+        
         Time
+        
+        Name
     end
     
     properties (Dependent, Hidden)
@@ -48,7 +48,7 @@ classdef Plane < handle & matlab.mixin.SetGet
     end
     
     
-    properties (SetAccess = protected,SetObservable)
+    properties (SetAccess = protected, SetObservable)
         Data
         dataDims
         
@@ -61,27 +61,29 @@ classdef Plane < handle & matlab.mixin.SetGet
     
     properties (SetAccess = private)
         previousShape
+        transformState  = 0; % 0: none applied; 1: applied; -1: applied inverted
     end
     
     
     methods
         explorer(obj,roiType,logScale)
         explorer_update(obj,roi,event,imAx)
-
+        baseline_correct(obj,timeWin,bcFcn)
+        
         function obj = Plane(data,dataDims,id)
             if nargin < 1, data = [];     end
             if nargin < 2, dataDims = ""; end
             if nargin < 3, id = 1;        end
-           
+            
             postsets = {'Fs','spatialTform','useSpatialTform','spatialCoords','spatialDims'};
             cellfun(@(a) addlistener(obj,a,'PostSet',@obj.update_log),postsets);
             
             obj.update_log('Plane created');
-
+            
             obj.set_Data(data,dataDims);
             
             obj.create_Structural;
-
+            
             obj.id = id;
         end
         
@@ -104,13 +106,14 @@ classdef Plane < handle & matlab.mixin.SetGet
                     dataDims{i} = sprintf('Dim_%d',i);
                 end
             end
-                
-            obj.Data     = data; clear data
+            
+            obj.nYX = [size(data,1) size(data,2)];
+            
+            obj.Data = data; clear data
             
             obj.dataDims = dataDims;
             
-            obj.nYX = [size(obj.Data,1) size(obj.Data,2)];
-            
+            obj.Mask = fus.Mask(obj);
             
             obj.update_log('Data updated %s; dims: %s',mat2str(obj.dimSizes),obj.dataDimsStr);
         end
@@ -130,10 +133,13 @@ classdef Plane < handle & matlab.mixin.SetGet
         end
         
         
-        function newNum = reshape_data(obj,newShape)
+        function data = reshape_data(obj,newShape)
+            % data = reshape_data(obj,newShape)            
+            
             try
-                oldShape = obj.dataDims;
-                newShape = cellstr(newShape);
+                if ~iscellstr(newShape)
+                    newShape = cellstr(newShape);
+                end
                 newNum = ones(size(newShape));
                 n = obj.num;
                 for i = 1:length(newShape)
@@ -143,10 +149,12 @@ classdef Plane < handle & matlab.mixin.SetGet
                         newNum(i) = newNum(i)*n.(c{j});
                     end
                 end
-                obj.Data = reshape(obj.Data,newNum);
-                obj.dataDims      = newShape;
-                obj.previousShape = oldShape;
-                obj.update_log('Reshaped data dims -> %s %s',obj.dataDimsStr,mat2str(obj.dimSizes));
+                data = reshape(obj.Data,newNum);
+                % obj.dataDims      = newShape;
+                % obj.previousShape = oldShape;
+                % obj.update_log('Reshaped data dims -> %s %s',obj.dataDimsStr,mat2str(obj.dimSizes));
+                
+                
             catch me
                 obj.update_log(me);
                 fprintf(2,'---> Current data shape: %s <---\n\n',obj.dataDimsStr)
@@ -156,12 +164,15 @@ classdef Plane < handle & matlab.mixin.SetGet
             if nargout == 0, clear newNum; end
         end
         
-        function permute_data(obj,newDimOrder)
+        function oldDimOrder = permute_data(obj,newDimOrder)
+            % oldDimOrder = permute_data(obj,newDimOrder)
+            
             try
+                oldDimOrder = obj.dimOrder;
                 if isnumeric(newDimOrder)
                     newDimIdx = newDimOrder;
                 else
-                    newDimIdx = obj.find_dim(newDimOrder); 
+                    newDimIdx = obj.find_dim(newDimOrder);
                 end
                 obj.Data = permute(obj.Data,newDimIdx);
                 
@@ -200,24 +211,28 @@ classdef Plane < handle & matlab.mixin.SetGet
                 otherwise
                     obj.Log(idx).message = sprintf(msg,varargin{:});
             end
-            
         end
         
+        
+        
+        
+        
+        
     end % methods (Public); functions
-        
-        
-        
-        
-        
-        
-        
+    
+    
+    
+    
+    
+    
+    
     methods % set/get
         
         
         function n = get.dimSizes(obj)
             n = size(obj.Data);
         end
-
+        
         function n = get.num(obj)
             x = obj.dimSizes;
             d = matlab.lang.makeValidName(obj.dataDims);
@@ -225,7 +240,7 @@ classdef Plane < handle & matlab.mixin.SetGet
                 n.(d{i}) = x(i);
             end
         end
-
+        
         function d = get.dimOrder(obj)
             d = matlab.lang.makeValidName(obj.dataDims);
         end
@@ -237,6 +252,9 @@ classdef Plane < handle & matlab.mixin.SetGet
             end
         end
         
+        function n = get.nDims(obj)
+            n = lneth(obj.dimOrder);
+        end
         
         function s = get.dataDimsStr(obj)
             s = '';
@@ -246,51 +264,38 @@ classdef Plane < handle & matlab.mixin.SetGet
             s(1) = [];
         end
         
-       
+        
         function t = get.Time(obj)
             t = 0:obj.num.(obj.TimeDim)-1;
             t = t ./ obj.Fs;
         end
         
-        function d = get.Structural(obj)
-            if obj.useSpatialTform
-                d = imwarp(obj.Structural,obj.spatialTform,'FillValues',nan);
-                d = center_crop(d,obj.nYX);
-            else
-                d = obj.Structural;
-            end
+        function n = get.Name(obj)
+             n = sprintf('Plane %d',obj.id);
         end
         
-        function d = get.Data(obj)
-            if obj.useSpatialTform
-                d = imwarp(obj.Data,obj.spatialTform,'FillValues',nan);
-                d = center_crop(d,obj.nYX);
-            else
-                d = obj.Data;
-            end
+        function set.useSpatialTform(obj,tf)
+            inv = ~tf;
+            apply_spatial_tform(obj,inv);
         end
         
+        function apply_spatial_tform(obj,inv)
+            if inv
+                if obj.transformState == 0, return; end % don't do anything
+                tform = invert(obj.spatialTform);
+                obj.transformState = -1;
+            else
+                tform = obj.spatialTform;
+                obj.transformState = 1;
+            end
+            obj.Data = imwarp(obj.Data,tform,'FillValues',nan);
+            obj.Data = center_crop(obj.Data,obj.nYX);
+            
+            obj.Structural = imwarp(obj.Structural,tform,'FillValues',nan);
+            obj.Structural = center_crop(obj.Structural,obj.nYX);
+        end
         
-        
-        
-        
-        
-        
-%         function set.spatialTform(obj,tform)
-%             obj.spatialTform = tform;
-%             obj.update_log('
-%         end
-        
-        
-        
-%         function set.useSpatialTform(obj,tf)
-%             obj.useSpatialTform = tf;
-%             obj.update_log('Set useSpatialTform = %g',tf)
-%         end
     end % methods (Public); set/get
-    
-    
-    
     
     
     

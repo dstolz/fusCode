@@ -35,7 +35,7 @@ colormap(ax,bone(512))
 % plot(ax,obj.Mask.perimiterXY(:,1),obj.Mask.perimiterXY(:,2),'.c');
 % hold(ax,'off')
 
-t = sprintf('%s | Plane %d',obj.Name,obj.id);
+t = sprintf('Plane %d',obj.id);
 title(ax,t,'Interpreter','none')
 
 fprintf('Click the image to create an ROI.\nUse right-click for additional options.\n')

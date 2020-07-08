@@ -1,4 +1,4 @@
-classdef Volume < handle
+classdef Volume < handle & matlab.mixin.Copyable
     
     properties (SetObservable = true)
         Plane   (:,1) fus.Plane
@@ -21,12 +21,38 @@ classdef Volume < handle
         align_planes(obj,display)
         varargout = grid_size(obj)
         
-        function obj = Volume(ffn)
+        function obj = Volume(data,dataDims)
             if nargin == 0, return; end
             
-            if isempty(ffn), return; end
+            if isempty(data), return; end
+            
+            obj.add_plane(data,dataDims);
+        end
+        
+        function add_plane(obj,data,dataDims)
+          
+            if ischar(data) || isstring(data)
+                load(data,'-mat'); % may contain dims
+            end
+            
+%             assert(ndims(data) == length(dims), 'fus:Volume:DimMismatch', ...
+%                 'ndims(data) ~= length(dims)');
+            
+            if nargin < 2, dataDims = []; end
             
             
+            pidx = find(strcmpi('Planes',dataDims) | strcmpi('Plane',dataDims),1);
+            if isempty(pidx) % just one plane
+                obj.Plane(end+1) = fus.Plane(data,dataDims,obj.nPlanes+1);
+            else % multiple planes
+                idx = cell(1,length(dataDims));
+                dataDims(pidx) = [];
+                for i = 1:size(data,pidx)
+                    idx(:) = {':'};
+                    idx{pidx} = i;
+                    obj.Plane(end+1) = fus.Plane(data(idx{:}),dataDims,obj.nPlanes+1);
+                end
+            end
         end
     end % methods (Public)
     
@@ -47,7 +73,6 @@ classdef Volume < handle
             else
                 id= obj.active;
             end
-            
         end
     end % methods (Public) % set/get
 end

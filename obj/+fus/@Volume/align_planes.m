@@ -10,9 +10,6 @@ function align_planes(obj,display)
 
 if nargin < 2 || isempty(display), display = true; end
 
-if display
-    warning('off','images:imshow:magnificationMustBeFitForDockedFigure');
-end
 
 midPlane = round(obj.nPlanes/2);
 
@@ -42,11 +39,23 @@ for i = midPlane-1:-1:1
     refPlane = tformPlane;
 end
 
-set(Plane,'useSpatialTform',true);
-
 
 if display
-    warning('on','images:imshow:magnificationMustBeFitForDockedFigure');
+    
+    f = findobj('type','figure','-and','name','align_planes');
+    if isempty(f)
+        f = figure('name','align_planes');
+    end
+    clf(f);
+    ax = subplot(211,'parent',f);
+    obj.montage(ax);
+    ax.Title.String = [obj.Name "original"];
+    
+    set(Plane,'useSpatialTform',true);
+    ax = subplot(212,'parent',f);
+    obj.montage(ax);
+    ax.Title.String = [obj.Name "warped"];
+    
 end
 
 function [registered,tform] = process(movingPlane,refPlane)
@@ -60,24 +69,25 @@ tform = imregtform(movingPlane,refPlane,'rigid',optimizer,metric);
 registered = imwarp(movingPlane,tform);
 
 registered = center_crop(registered,[nY nX]);
-% win = centerCropWindow2d(size(registered),[nY nX]);
-% registered = registered(win.YLimits(1):win.YLimits(2),:);
-% registered = registered(:,win.XLimits(1):win.XLimits(2));
-
 
 
 function show_steps(refPlane,movingPlane,tformPlane,tform,i,ref)
 
-subplot(131)
+f = findobj('type','figure','-and','name','align_planes');
+if isempty(f)
+    f = figure('name','align_planes');
+end
+
+
+subplot(311,'Parent',f)
 imshowpair(refPlane,movingPlane,'falsecolor','scaling','joint');
 title(sprintf('Plane %d vs %d (orig)',ref,i))
 
-subplot(132)
+subplot(312,'Parent',f)
 imshowpair(movingPlane,tformPlane,'falsecolor','scaling','joint');
 title(sprintf('Plane %d Original vs Registered',i));
 
-
-subplot(133)
+subplot(313,'Parent',f)
 imshowpair(refPlane,tformPlane,'falsecolor','scaling','joint');
 title(sprintf('Plane %d vs %d (registered)',ref,i))
 

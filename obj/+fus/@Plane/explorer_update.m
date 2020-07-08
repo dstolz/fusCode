@@ -28,6 +28,7 @@ ivec = 1:0.25:xvec(end);
 if any(isnan(mROI(:)))
     miROI = nan(n.Stim,length(ivec));
 else
+    miROI = zeros(size(mROI,1),length(ivec));
     for i = 1:size(mROI,1)
         miROI(i,:) = interp1(xvec,mROI(i,:),ivec,'makima');
     end
