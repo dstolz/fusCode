@@ -1,4 +1,5 @@
 function baseline_correct(obj,timeWin,bcFcn)
+% baseline_correct(obj,timeWin,bcFcn)
 
 narginchk(2,3)
 
@@ -11,7 +12,7 @@ data = obj.reshape_data({'Y*X*Stim*Trials','Frames'});
 
 data = bcFcn(data,mean(data(:,fidx),2));
 
-obj.Data = reshape(data,obj.dimSizes);
+obj.set_Data(reshape(data,obj.dimSizes));
 
 obj.update_log('Baseline correction, timeWin = %s',mat2str(timeWin));
 
