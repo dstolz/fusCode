@@ -1,8 +1,7 @@
 classdef Mask < handle
 
     properties       
-        
-        
+        UserData        
     end
     
     properties (SetObservable)
@@ -31,9 +30,9 @@ classdef Mask < handle
     end
     
     methods
-        function obj = Mask(Parent)
+        function obj = Mask(Parent)            
             obj.Parent = Parent; 
-            obj.mask = true(Parent.nYX);
+            obj.mask = true(Parent.nYX); % set default mask
         end
         
         function create_roi(obj,tool)
@@ -72,7 +71,7 @@ classdef Mask < handle
             
         end
         
-        function create_auto(obj)
+        function create_threshold(obj)
             
         end
         
