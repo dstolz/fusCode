@@ -24,9 +24,14 @@ classdef Volume < handle & matlab.mixin.Copyable
     
     methods
         align_planes(obj,display)
+        smooth(obj,gwN,gwSD)
         varargout = grid_size(obj)
         
+        
         function obj = Volume(data,dataDims)
+            % obj = Volume
+            % obj = Volume(data,dataDims)
+            
             if nargin == 0, return; end
             
             if isempty(data), return; end
@@ -35,9 +40,11 @@ classdef Volume < handle & matlab.mixin.Copyable
         end
         
         function add_plane(obj,data,dataDims)
-          
+            % add_plane(obj,data,dataDims)
+            % add_plane(obj,fullFileName,[dataDims])
+            
             if ischar(data) || isstring(data)
-                load(data,'-mat'); % may contain dims
+                load(data,'-mat'); % may contain dataDims
             end
             
 %             assert(ndims(data) == length(dims), 'fus:Volume:DimMismatch', ...
@@ -69,12 +76,7 @@ classdef Volume < handle & matlab.mixin.Copyable
         end
         
         function process_planes_parallel(obj,func,varargin)
-            x=ver('parallel');
-            if isempty(x)
-                fprintf(2,'Parallel Computing Toolbox not available!\n')
-                return
-            end
-            
+            obj.check_parallel;
             parfor i = 1:obj.nPlanes
                 func(obj.Plane(i),varargin{:}); %#ok<PFBNS>
             end
@@ -85,7 +87,9 @@ classdef Volume < handle & matlab.mixin.Copyable
             % data = cat(obj,field,[dim],[ids])
             % Concatenate fields of all, or a subset of Planes
             
+            if nargin < 3 || isempty(dim), dim = 3; end
             if nargin < 4 || isempty(ids) || all(ids == 0), ids = 1:obj.nPlanes; end
+            
             
             ids = intersect(1:obj.nPlanes,ids);
             
@@ -123,4 +127,32 @@ classdef Volume < handle & matlab.mixin.Copyable
         
         
     end % methods (Public) % set/get
+    
+    
+    
+    
+    
+    
+    
+    methods (Static)
+        function tf = check_parallel
+            x=ver('parallel');
+            tf = isempty(x);
+            if ~tf
+                fprintf(2,'Parallel Computing Toolbox not available!\n')
+            end
+        end
+        
+    end % methods (Static)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 end
