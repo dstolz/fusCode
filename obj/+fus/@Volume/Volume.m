@@ -1,10 +1,7 @@
 classdef Volume < handle & matlab.mixin.Copyable
     
     
-    properties
-        
-        useParallel     (1,1) logical = false;
-        
+    properties        
         UserData
     end
     
@@ -66,14 +63,20 @@ classdef Volume < handle & matlab.mixin.Copyable
         
         
         function process_planes(obj,func,varargin)
-            if obj.useParallel
-                parfor i = 1:obj.nPlanes
-                    func(obj.Plane(i),varargin{:}); %#ok<PFBNS>
-                end
-            else
-                for i = 1:obj.nPlanes
-                    func(obj.Plane(i),varargin{:});
-                end
+            for i = 1:obj.nPlanes
+                func(obj.Plane(i),varargin{:});
+            end
+        end
+        
+        function process_planes_parallel(obj,func,varargin)
+            x=ver('parallel');
+            if isempty(x)
+                fprintf(2,'Parallel Computing Toolbox not available!\n')
+                return
+            end
+            
+            parfor i = 1:obj.nPlanes
+                func(obj.Plane(i),varargin{:}); %#ok<PFBNS>
             end
         end
         
@@ -114,18 +117,6 @@ classdef Volume < handle & matlab.mixin.Copyable
             else
                 id= obj.active;
             end
-        end
-        
-        function set.useParallel(obj,tf)
-            x=ver('parallel');
-            if isempty(x)
-                fprintf(2,'Parallel Computing Toolbox not available!\n')
-                obj.useParallel = false;
-            else
-                obj.useParallel = tf;
-            end
-            
-            if obj.useParallel, gcp; end
         end
         
         
