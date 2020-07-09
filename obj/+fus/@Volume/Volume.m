@@ -67,6 +67,23 @@ classdef Volume < handle & matlab.mixin.Copyable
         end
         
         
+        function data = cat(obj,field,dim,ids)
+            % data = cat(obj,field,[dim],[ids])
+            % Concatenate fields of all, or a subset of Planes
+            
+            if nargin < 4 || isempty(ids) || all(ids == 0), ids = 1:obj.nPlanes; end
+            
+            ids = intersect(1:obj.nPlanes,ids);
+            
+            P = obj.Plane(ids);
+            
+            data = [];
+            for i = 1:length(ids)
+                data = cat(dim,data,P(i).(field));
+            end
+            
+        end
+        
     end % methods (Public)
     
     
