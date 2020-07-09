@@ -62,6 +62,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     end
     
     properties (SetAccess = private)
+        initialized     = false;
         previousShape
         transformState  = 0; % 0: none applied; 1: applied; -1: applied inverted
     end
@@ -70,7 +71,6 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     methods
         explorer(obj,roiType,logScale)
         explorer_update(obj,roi,event,imAx)
-        baseline_correct(obj,timeWin,bcFcn)
         
         function obj = Plane(data,dataDims,id)
             if nargin < 1, data = [];     end
@@ -91,6 +91,12 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         
         function set_Data(obj,data,dataDims)
             if isempty(data), return; end
+            
+            if nargin < 3 || isempty(dataDims)
+                assert(~isempty(obj.dataDims),'fus:Plane:set_Data:MissingDataDims', ...
+                    'dataDims must be specified')
+                dataDims = obj.dataDims;
+            end
             
             assert(ndims(data) > 2, ...
                 'fus:Plane:set_Data:InvalidDims', ...
@@ -115,9 +121,13 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             
             obj.dataDims = dataDims;
             
-            obj.Mask = fus.Mask(obj);
+            if ~obj.initialized
+                obj.Mask = fus.Mask(obj);
+            end
             
             obj.update_log('Data updated %s; dims: %s',mat2str(obj.dimSizes),obj.dataDimsStr);
+            
+            obj.initialized = true;
         end
         
         function create_Structural(obj)
