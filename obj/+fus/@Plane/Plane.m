@@ -1,4 +1,4 @@
-classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable
+classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicprops
     
     properties
         id       (1,1) uint16 = 1;
