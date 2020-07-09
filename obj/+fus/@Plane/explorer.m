@@ -1,4 +1,4 @@
-function explorer(obj,roiType,logScale)
+function explorer(obj,tool,logScale)
 % explorer(Plane,[roiType],[logScale])
 %
 % Plane     ... a single Plane object.
@@ -10,47 +10,64 @@ function explorer(obj,roiType,logScale)
 % DJS 2020
 
 
-if nargin < 2 || isempty(roiType),  roiType = 'rectangle'; end
+if nargin < 2 || isempty(tool),  tool = 'Rectangle'; end
 if nargin < 3 || isempty(logScale), logScale = true;       end
 
-
+mustBeMember(tool,{'Assisted','Circle','Ellipse','Freehand','Polygon','Rectangle'});
 
 X = obj.Structural;
 
 if logScale, X = log10(X); end
 
-f = figure('color','w');
+f = findobj('type','figure','-and','tag',['ROIfig_' obj.Name]);
+if isempty(f)
+    f = figure('tag',['ROIfig_' obj.Name],'name',obj.Name,'Color','w');
+end
+
 f.Position([3 4]) = [500 600];
 movegui(f)
 
 ax = axes(f,'Units','Normalized','Position',[.1 .5 .8 .4],'Tag','PlaneImage');
-
 
 imagesc(ax,X);
 axis(ax,'image')
 set(ax,'xtick',[],'ytick',[]);
 colormap(ax,bone(512))
 
-% hold(ax,'on')
-% plot(ax,obj.Mask.perimiterXY(:,1),obj.Mask.perimiterXY(:,2),'.c');
-% hold(ax,'off')
+hold(ax,'on')
+h = obj.Mask.draw_overlay(ax);
+h.FaceAlpha = 0;
+h.EdgeAlpha = .5;
+hold(ax,'off')
 
-t = sprintf('Plane %d',obj.id);
-title(ax,t,'Interpreter','none')
+t = sprintf("Plane %d",obj.id);
+title(ax,["Click the image to create an ROI" t],'Interpreter','none')
 
 fprintf('Click the image to create an ROI.\nUse right-click for additional options.\n')
 
 
-roi = feval(sprintf('draw%s',lower(roiType)),ax);
-roi.Deletable = 0;
-roi.LabelVisible = 'off';
+roi = images.roi.(tool)('linewidth',2,'color',[1 .8 0], ...
+    'deletable',false,'Parent',ax,'FaceSelectable',true, ...
+    'Tag',['ROI_' obj.Name]);
+
+draw(roi);
+
 
 if isempty(roi), return; end
 
-obj.explorer_update(roi,[],ax);
+title(ax,t,'Interpreter','none')
 
-addlistener(roi,'MovingROI',@(src,evnt) obj.explorer_update(src,evnt,ax));
-addlistener(roi,'ROIMoved', @(src,evnt) obj.explorer_update(src,evnt,ax));
+% start the roi plot
+obj.explorer_update(roi);
+
+% listen for changes in roi
+addlistener(roi,'MovingROI',@(src,evnt) obj.explorer_update(src,evnt));
+addlistener(roi,'ROIMoved', @(src,evnt) obj.explorer_update(src,evnt));
+
+% listen for changes in object properties
+addlistener(obj,'Data','PostSet',      @(src,evnt) obj.explorer_update(src,evnt));
+addlistener(obj.Mask,'mask','PostSet', @(src,evnt) obj.explorer_update(src,evnt));
+
 
 
 

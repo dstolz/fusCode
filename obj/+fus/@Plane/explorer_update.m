@@ -1,13 +1,17 @@
-function explorer_update(obj,roi,event,imAx)
+function explorer_update(obj,src,event)
 
 % DJS 2020
 
 
-if ~isempty(roi.UserData) && etime(clock,roi.UserData) < .1, return; end % be nice to the cpu
+% if ~isempty(obj.UserData.roiTime) && etime(clock,obj.UserData.roiTime) < .1, return; end % be nice to the cpu
+% 
+% obj.UserData.roiTime = clock;
 
-roi.UserData = clock;
 
 
+roi = findobj('Tag',['ROI_' obj.Name]);
+
+imAx = roi.Parent;
 figH = imAx.Parent;
 
 
