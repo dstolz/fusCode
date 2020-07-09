@@ -149,19 +149,26 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             % data = reshape_data(obj,newShape)            
             
             try
-                if ~iscellstr(newShape)
-                    newShape = cellstr(newShape);
-                end
-                newNum = ones(size(newShape));
+                                
+                rind = cellfun(@isempty,newShape); % [] == remaining dims
+                assert(nnz(rind)<=1,'fus:Plane:reshape_data:InvalidShape', ...
+                    '[] can only be used zero or one times');
+                
+                
+                newNum = repmat({1},size(newShape));
                 n = obj.num;
                 for i = 1:length(newShape)
-                    c = textscan(newShape{i},'%s','delimiter','*');
-                    c = c{1};
-                    for j = 1:length(c)
-                        newNum(i) = newNum(i)*n.(c{j});
+                    if isempty(newShape{i})
+                        newNum{i} = [];
+                    else
+                        c = textscan(newShape{i},'%s','delimiter','*');
+                        c = c{1};
+                        for j = 1:length(c)
+                            newNum{i} = newNum{i}*n.(c{j});
+                        end
                     end
                 end
-                data = reshape(obj.Data,newNum);
+                data = reshape(obj.Data,newNum{:});
                 % obj.dataDims      = newShape;
                 % obj.previousShape = oldShape;
                 % obj.update_log('Reshaped data dims -> %s %s',obj.dataDimsStr,mat2str(obj.dimSizes));
