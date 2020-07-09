@@ -9,7 +9,6 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     properties (SetObservable)
         Mask        (1,1) %fus.Mask
         
-        
         Structural  (:,:) {mustBeNumeric}
         
         bgPlane     (1,1) % fus.Plane
@@ -90,6 +89,8 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         end
         
         function set_Data(obj,data,dataDims)
+            % set_Data(obj,data,[dataDims])
+            
             if isempty(data), return; end
             
             if nargin < 3 || isempty(dataDims)
@@ -183,11 +184,10 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             if nargout == 0, clear newNum; end
         end
         
-        function oldDimOrder = permute_data(obj,newDimOrder)
-            % oldDimOrder = permute_data(obj,newDimOrder)
+        function permute_data(obj,newDimOrder)
+            % permute_data(obj,newDimOrder)
             
             try
-                oldDimOrder = obj.dimOrder;
                 if isnumeric(newDimOrder)
                     newDimIdx = newDimOrder;
                 else
@@ -264,7 +264,6 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     
     
     
-    
     methods % set/get
         
         
@@ -318,6 +317,15 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             apply_spatial_tform(obj,inv);
         end
         
+        
+        
+    end % methods (Public); set/get
+    
+    
+    
+    
+    
+    methods (Access = protected)
         function apply_spatial_tform(obj,inv)
             if inv
                 if obj.transformState == 0, return; end % don't do anything
@@ -327,18 +335,12 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
                 tform = obj.spatialTform;
                 obj.transformState = 1;
             end
-            obj.Data = imwarp(obj.Data,tform,'FillValues',nan);
-            obj.Data = center_crop(obj.Data,obj.nYX);
+            d = imwarp(obj.Data,tform,'FillValues',nan);
+            obj.Data = center_crop(d,obj.nYX);
             
-            obj.Structural = imwarp(obj.Structural,tform,'FillValues',nan);
-            obj.Structural = center_crop(obj.Structural,obj.nYX);
+            d = imwarp(obj.Structural,tform,'FillValues',nan);
+            obj.Structural = center_crop(d,obj.nYX);
         end
-        
-    end % methods (Public); set/get
-    
-    
-    
-    
-    
+    end % methods (Access = protected)
     
 end
