@@ -203,6 +203,20 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             end
         end
         
+        function ipermute_data(obj)
+            % ipermute_data(obj)
+            %
+            % Restore original dim order
+            
+            try
+                obj.Data = ipermute(obj.Data,obj.dimOrder);
+                obj.update_log('Permuted data dims -> %s',obj.dataDimsStr);
+            catch me
+                obj.update_log(me);
+                rethrow(me)
+            end
+        end
+        
         
         function update_log(obj,msg,varargin)
             if isempty(obj.Log)
