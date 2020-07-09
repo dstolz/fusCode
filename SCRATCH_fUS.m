@@ -1,6 +1,7 @@
 %% Preprocessing script and some other useful tools
 
-addpath c:\Users\Daniel\src\fusCode\
+% addpath c:\Users\Daniel\src\fusCode\
+addpath c:\src\fusCode
 
 % make sure code is on path
 if isempty(which('fus_resaveAsPlanes'))
@@ -11,7 +12,8 @@ end
 
 
 %% Set where you data lives
-pth = 'C:\Users\Daniel\Documents\MATLAB\FigurePopoutData';
+% pth = 'C:\Users\Daniel\Documents\MATLAB\FigurePopoutData';
+pth = 'D:\fUS_Data';
 cd(pth)
 
 
@@ -42,8 +44,8 @@ fus_resaveAsPlanes(fnRoot);
 %% Load Planes
 % Load data that has already been reorganized using fus_resaveAsPlanes
 % also see: fus_savePlanes
-% Plane = fus_loadPlanes(fnRoot);
-Plane = fus_loadPlanes(fnRoot,[],'-Preprocessed');
+Plane = fus_loadPlanes(fnRoot);
+% Plane = fus_loadPlanes(fnRoot,[],'-Preprocessed');
 
 
 %% Optimize plane orientations

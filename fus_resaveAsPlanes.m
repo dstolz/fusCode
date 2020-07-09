@@ -76,6 +76,8 @@ for i = 1:n
     
     I.transform = affine2d;
     
+    I.useParallel = false;
+    
     I = orderfields(I);
     
     

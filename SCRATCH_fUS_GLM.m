@@ -3,6 +3,7 @@
 
 stimOnOff = [10 13]; % sec
 
+alpha = .05; % FDR corrected
 
 I = Plane(1).I;
 
@@ -13,14 +14,15 @@ stimVec(stimIdx) = 1;
 
 HR = meanHaemoResp;
 HR(1:stimIdx(1)) = [];
-X = conv(stimVec,HR,'full');
-X = X ./ max(X);
+y = conv(stimVec,HR,'full');
+y = y ./ max(y);
+y = y(:);
 
-X(I.nFrames+1:end) = []; % truncate
+y(I.nFrames+1:end) = []; % truncate
 
 plot(stimVec);
 hold on
-plot(X);
+plot(y);
 plot(meanHaemoResp);
 hold off
 grid on
@@ -31,27 +33,48 @@ I = Plane(1).I;
 tStat = cell(I.nPlanes,1);
 pVals = tStat;
 tic;
+clear stats
 parfor pid = 1:length(Plane)
     I = Plane(pid).I;
     npx = length(I.roiMaskIdx);
     
     fprintf('Computing GLM for Plane %d, %d voxels, %d stim\n',I.id,npx,I.nStim)
     
-    D = mean(Plane(pid).Data(I.roiMaskIdx,:,:,:),I.dTrials);
-    
-    y = reshape(D,[npx*I.nStim,I.nFrames])';
-    tStat{pid} = zeros(size(y,2),1);
-    pVals{pid} = tStat{pid};
-    for k = 1:size(y,2)
-%         m = fitglm(X,y(:,k),'linear','link','identity');
-%         mdl{pid}{k} = compact(m);
-        [~,~,stats] = glmfit(X,y(:,k),'normal','link','identity');
-        tStat{pid}(k) = stats.t(2);
-        pVals{pid}(k) = stats.p(2);
+    X = mean(Plane(pid).Data(I.roiMaskIdx,:,:,:),I.dTrials);
+    X = squeeze(X);
+%     X = reshape(D,[npx,I.nStim,I.nFrames])';
+%     tStat{pid} = zeros(size(X,2),1);
+%     pVals{pid} = tStat{pid};
+    for k = 1:npx
+        [~,~,s] = glmfit(squeeze(X(k,:,:))',y,'normal','link','identity');
+        stats{pid}(k) = s;
     end
 end
+
+tStat = cellfun(@(a) [a.t],stats,'uni',0);
+pVals = cellfun(@(a) [a.p],stats,'uni',0);
+
 fprintf('Completed in %.3f minutes\n',toc/60)
 
+
+%% FDR correction
+
+fprintf('FDR correcting p-values ...')
+
+
+n = cellfun(@(a) size(a,2),pVals);
+
+p = cell2mat(pVals);
+
+pValsAdj = pVals;
+
+[h, crit_p, adj_ci_cvrg, adj_p]=fdr_bh(p,alpha);
+k = 1;
+for i = 1:length(n)
+    pValsAdj{i} = adj_p(k:k+n(i)-1);
+    k = k+n(i);
+end
+fprintf(' done\n')
 
 %% Convert GLM results to t-statistic and p-value maps - Y x X x Stim x Plane
 I = Plane(1).I;
@@ -66,7 +89,7 @@ for pid = 1:length(Plane)
     npx = length(I.roiMaskIdx);
     
     t = reshape(tStat{pid},[npx I.nStim]);
-    p = reshape(pVals{pid},[npx I.nStim]);
+    p = reshape(pValsAdj{pid},[npx I.nStim]);
     
     tm = blankFrame; pm = blankFrame;
     for s = 1:I.nStim
@@ -78,6 +101,8 @@ for pid = 1:length(Plane)
     end
         
 end
+
+
 fprintf(' done\n')
 
 
@@ -105,18 +130,16 @@ ax.Title.String = I.fileRoot;
 ax.Title.Interpreter = 'none';
 
 h = colorbar(ax);
-h.Label.String = 't-stat';
-
-
-
-
-
-
-
+h.Label.String = '\itt-stat';
 
 % View p-value maps
 M = imtile(reshape(pMap,[I.nY I.nX I.nStim*I.nPlanes]),'GridSize',[I.nPlanes I.nStim]);
+
+% insig = M > alpha;
+
 M = log10(M);
+
+% M(insig) = 0;
 
 ax = subplot(122);
 imagesc(ax,M);
@@ -138,7 +161,7 @@ ax.Title.String = I.fileRoot;
 ax.Title.Interpreter = 'none';
 
 h = colorbar(ax);
-h.Label.String = '\itlog_{10}(p)';
+h.Label.String = '\itlog_{10}(p_{FDR})';
 
 
 
