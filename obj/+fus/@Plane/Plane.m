@@ -19,7 +19,6 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     
     properties (SetObservable,AbortSet)
         Fs          (1,1) {mustBePositive,mustBeFinite,mustBeNonempty} = 1; %Hz
-        applyMask   (1,1) logical = true
         
         dispTransparency double {mustBeNonnegative,mustBeLessThanOrEqual(dispTransparency,1)} = 0; % alpha = 1-dispTransparency
         

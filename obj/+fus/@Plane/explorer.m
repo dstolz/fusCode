@@ -65,8 +65,7 @@ addlistener(roi,'MovingROI',@(src,evnt) obj.explorer_update(src,evnt));
 addlistener(roi,'ROIMoved', @(src,evnt) obj.explorer_update(src,evnt));
 
 % listen for changes in object properties
-addlistener(obj,'Data','PostSet',      @(src,evnt) obj.explorer_update(src,evnt));
-addlistener(obj.Mask,'mask','PostSet', @(src,evnt) obj.explorer_update(src,evnt));
+addlistener(obj,'Data','PostSet', @(src,evnt) obj.explorer_update(src,evnt));
 
 
 

@@ -24,7 +24,7 @@ V.montage;
 
 %% Explore averaged trial data for each stimulus for a plane
 % This will update as plane data is manipulated if left open
-planeID = 1;
+planeID = 4;
 V.Plane(planeID).explorer('Circle');
 
 
@@ -33,16 +33,24 @@ V.Plane(planeID).explorer('Circle');
 V.align_planes;
 
 
-%% Draw masks on each Plane
-for i = 1:V.nPlanes
-    V.Plane(i).Mask.create_roi;
-end
-
-
-
 %% Volumetric spatial smoothing
 N = [3 3 3];
 V.smooth(N);
+
+%% Create data mask. Uncomment one method
+thresholdGuess = 2;
+for i = 1:V.nPlanes
+    % Method 1: Manually draw masks on each Plane
+    % V.Plane(i).Mask.create_roi;       
+
+    % Method 2: Threshold based on pixel luminance; Click the histogram to
+    % adjust the threshold. Hit any key to move on to the next plane.
+    V.Plane(i).Mask.create_threshold(thresholdGuess); 
+    pause
+end
+
+
+% TODO: Show montage w/ masks
 
 
 %% Apply Baseline correction to all planes in the volume
@@ -53,7 +61,8 @@ V.process_planes(@baseline_correct,baselineWindow);
 
 
 %% Use the Log associated with each plane to see how the Plane Data has been manipulated so far
-V.Plane(1).print_log
+planeId = 6;
+V.Plane(planeId).print_log
 
 
 
