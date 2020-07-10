@@ -5,7 +5,7 @@ classdef Mask < handle
     end
     
     properties (SetObservable)
-        mask     (:,:) logical
+        mask            (:,:) logical
         minSatellitePx  (1,1) double {mustBeNonnegative,mustBeFinite,mustBeInteger} = 10;
     end
     

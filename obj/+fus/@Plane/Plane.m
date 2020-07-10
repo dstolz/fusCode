@@ -27,6 +27,8 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         spatialCoords       (1,3) {mustBeFinite,mustBeNonempty} = [0 0 0];
         spatialUnits        (1,1) string = "mm";
         spatialTform        (1,1) affine2d = affine2d;
+        
+        useMask            (1,1) logical = true;
     end
     
     properties (Dependent)
@@ -75,7 +77,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             if nargin < 2, dataDims = ""; end
             if nargin < 3, id = 1;        end
             
-            postsets = {'Fs','spatialTform','useSpatialTform','spatialCoords','spatialDims'};
+            postsets = {'Fs','spatialTform','useSpatialTform','spatialCoords','spatialDims','useMask'};
             cellfun(@(a) addlistener(obj,a,'PostSet',@obj.update_log),postsets);
             
             obj.update_log('Plane created');
@@ -104,9 +106,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             
             assert(ndims(data) == numel(dataDims), ...
                 'fus:Plane:set_Data:DimMismatch', ...
-                'ndims(data) ~= numel(dataDims)')
-            
-            
+                'ndims(data) ~= numel(dataDims)')            
             
             if isempty(dataDims)
                 dataDims = {'Y' 'X'};
@@ -121,11 +121,13 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             
             obj.dataDims = dataDims;
             
+            obj.update_log('Data updated %s; dims: %s',mat2str(obj.dimSizes),obj.dataDimsStr);
+            
             if ~obj.initialized
                 obj.Mask = fus.Mask(obj);
+                obj.update_log('ROI mask initialized');
             end
-            
-            obj.update_log('Data updated %s; dims: %s',mat2str(obj.dimSizes),obj.dataDimsStr);
+                        
             
             obj.initialized = true;
         end
@@ -266,6 +268,14 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     methods % set/get
         
         
+        function data = get.Data(obj)
+            data = obj.Data;
+            if obj.useMask
+                n = size(data);
+                data(repmat(~obj.Mask.mask,[1 1 n(3:end)])) = nan;
+            end
+        end
+        
         function n = get.dimSizes(obj)
             n = size(obj.Data);
         end
@@ -339,6 +349,9 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             
             d = imwarp(obj.Structural,tform,'FillValues',nan);
             obj.Structural = center_crop(d,obj.nYX);
+            
+            d = imwarp(obj.Mask.mask,tform,'FillValues',false);
+            obj.Mask.mask = center_crop(d,obj.nYX);
         end
     end % methods (Access = protected)
     
