@@ -270,7 +270,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         
         function data = get.Data(obj)
             data = obj.Data;
-            if obj.useMask
+            if obj.useMask && obj.initialized
                 n = size(data);
                 data(repmat(~obj.Mask.mask,[1 1 n(3:end)])) = nan;
             end
