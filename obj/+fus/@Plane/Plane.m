@@ -250,9 +250,13 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         
         
         
-        function print_log(obj)
+        function print_log(obj,nRecent)
+            if nargin < 2 || isempty(nRecent), nRecent = 0; end
             fprintf('\n%s - Log\n',obj.Name)
-            for i = 1:length(obj.Log)
+            
+            if nRecent <= 0 || isinf(nRecent), nRecent = length(obj.Log); end
+            n = length(obj.Log)-nRecent+1;
+            for i = n:length(obj.Log)
                 fprintf(' %02d. %s: %s\n',i,datestr(obj.Log(i).time,21),obj.Log(i).message)
             end
         end
