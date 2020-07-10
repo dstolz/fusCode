@@ -25,7 +25,9 @@ V.montage;
 %% Explore averaged trial data for each stimulus for a plane
 % This will update as plane data is manipulated if left open
 planeID = 4;
-V.Plane(planeID).explorer('Circle');
+V.Plane(planeID).explorer('Rectangle');
+% V.Plane(planeID).explorer('Circle');
+% V.Plane(planeID).explorer('Polygon');
 
 
 

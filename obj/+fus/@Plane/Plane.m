@@ -62,9 +62,11 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     end
     
     properties (SetAccess = private)
-        initialized     = false;
-        previousShape
         transformState  = 0; % 0: none applied; 1: applied; -1: applied inverted
+    end
+    
+    properties (SetAccess = private, Hidden)
+        initialized     = false;
     end
     
     
@@ -304,7 +306,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         end
         
         function n = get.nDims(obj)
-            n = lneth(obj.dimOrder);
+            n = length(obj.dimOrder);
         end
         
         function s = get.dataDimsStr(obj)
