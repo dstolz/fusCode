@@ -20,11 +20,6 @@ n = obj.num;
 
 ind = createMask(roi);
 
-
-% ind = ind & obj.Mask.ind;
-% ind = reshape(ind,[I.nPixels,1]);
-
-
 mROI = mean(plane_subset(obj.Data,ind),[d.Y d.X d.Trials],'omitnan');
 mROI = squeeze(mROI);
 xvec = 1:size(mROI,2);
@@ -102,7 +97,7 @@ if buildFlag
     
     ax2.Position = ax.Position;
 end
-ylabel(ax,{sprintf('Average of %d pixels in ROI',nnz(ind)); 'mean ampl. (arb units)'})
+ylabel(ax,{sprintf('Average of %d pixels in ROI',nnz(ind & obj.Mask.mask)); 'mean ampl. (arb units)'})
 
 
 
