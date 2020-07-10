@@ -157,6 +157,10 @@ classdef Mask < handle
             end
         end
         
+        function n = get.nMaskPixels(obj)
+            n = nnz(obj.mask);
+        end
+        
     end % methods (Public)
 
     methods (Access = private)
