@@ -35,6 +35,8 @@ classdef Volume < handle & matlab.mixin.Copyable
             if nargin == 0, return; end
             
             if isempty(data), return; end
+           
+            narginchk(2,2);
             
             obj.add_plane(data,dataDims);
         end
