@@ -75,7 +75,10 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     methods
         explorer(obj,roiType,logScale)
         explorer_update(obj,roi,event,imAx)
-        
+        y = expt_design(obj,HR,stimOnOff,display)
+         
+         
+         
         function obj = Plane(data,dataDims,id)
             if nargin < 1, data = [];     end
             if nargin < 2, dataDims = ""; end
@@ -318,7 +321,6 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             end
             s(1) = [];
         end
-        
         
         function t = get.Time(obj)
             t = 0:obj.num.(obj.TimeDim)-1;
