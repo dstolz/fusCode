@@ -42,6 +42,8 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         
         Time
         
+        nFrames
+        
         Name
     end
     
@@ -321,6 +323,10 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         function t = get.Time(obj)
             t = 0:obj.num.(obj.TimeDim)-1;
             t = t ./ obj.Fs;
+        end
+        
+        function n = get.nFrames(obj)
+            n = obj.num.(obj.TimeDim);
         end
         
         function n = get.Name(obj)
