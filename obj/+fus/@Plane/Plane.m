@@ -364,7 +364,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             d = imwarp(obj.Structural,tform,'FillValues',nan);
             obj.Structural = center_crop(d,obj.nYX);
             
-            d = imwarp(obj.Mask.mask,tform,'FillValues',false);
+            d = imwarp(obj.Mask.mask,tform,'FillValues',0);
             obj.Mask.mask = center_crop(d,obj.nYX);
         end
     end % methods (Access = protected)
