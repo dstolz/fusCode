@@ -20,6 +20,8 @@ classdef Volume < handle & matlab.mixin.Copyable
     
     properties (Dependent)
         nPlanes
+        nFrames
+        Time
     end
     
     methods
@@ -126,7 +128,13 @@ classdef Volume < handle & matlab.mixin.Copyable
         end
         
         
+        function t = get.Time(obj)
+            t = obj.Plane(1).Time;
+        end
         
+        function n = get.nFrames(obj)
+            n = obj.Plane(1).nFrames;
+        end
         
     end % methods (Public) % set/get
     
