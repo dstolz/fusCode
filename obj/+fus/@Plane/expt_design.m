@@ -1,13 +1,13 @@
-function y = expt_design(obj,HR,stimTimings,display)
-% y = expt_design(Plane,HR,stimTimings,[display])
+function y = expt_design(obj,HR,eventTimes,display)
+% y = expt_design(Plane,HR,eventTimes,[display])
 %
 % Generate experiment design for GLM
 %
 % Inputs:
 %   Plane       ... handle to Plane object
 %   HR          ... Haemodynamic response waveform (see estimate_hr)
-%   stimTimings ... 1x2 times (seconds) bracketing the onset and offset of
-%                   the stimulus.
+%   eventTimes  ... 1x2 times (seconds) bracketing the onset and offset of
+%                   the event.
 %   display     ... either logical true|false, or handle to an axis
 %                   (default = false)
 %
@@ -17,7 +17,6 @@ function y = expt_design(obj,HR,stimTimings,display)
 
 % DJS 2020
 
-% TODO: allow for Nx2 timings and some sort of labeling scheme
 
 narginchk(3,4);
 
@@ -26,7 +25,7 @@ if nargin < 4 || isempty(display), display = false; end
 
 tvec = obj.Time;
 % for i = 1:size(stimTimings,1)
-    stimInd = tvec >= stimTimings(1) & tvec <= stimTimings(2);
+    stimInd = tvec >= eventTimes(1) & tvec <= eventTimes(2);
     
     stimVec = zeros(1,obj.nFrames);
     stimVec(stimInd) = 1;
