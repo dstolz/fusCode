@@ -13,7 +13,7 @@ classdef Mask < handle
     properties (Dependent)
         idx
         coords
-        nMaskPixels
+        nPixels
     end
     
     properties (Access = private)
@@ -157,7 +157,7 @@ classdef Mask < handle
             end
         end
         
-        function n = get.nMaskPixels(obj)
+        function n = get.nPixels(obj)
             n = nnz(obj.mask);
         end
         
