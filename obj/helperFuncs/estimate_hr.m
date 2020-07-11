@@ -1,6 +1,7 @@
-function hr = estimate_hr(obj,stdThresh)
-% hr = estimate_hr(Volume,[zThreshold])
-% hr = estimate_hr(Plane,[zThreshold]
+function varargout = estimate_hr(obj,stdThresh)
+% hr = estimate_hr(Volume,[stdThresh])
+% hr = estimate_hr(Plane,...)
+% [hr,stdev] = estimate_hr(...)
 %
 % Estimate of the mean haemodynamic response function (Boubenec et al,
 % 2018):
@@ -12,6 +13,8 @@ function hr = estimate_hr(obj,stdThresh)
 % includes pre-response fluctuations that should be removed prior to
 % convolution with experiment design.
 %
+% Note that the threshold is only of the maximum response, not the
+% abs(max), so large negative fluctuations are ignored.
 %
 % Inputs:
 %   obj        ... either one fus.Volume or one or more fus.Plane objects
@@ -19,12 +22,12 @@ function hr = estimate_hr(obj,stdThresh)
 %
 % Output:
 %   hr         ... mean estimate of the haemodynamic response.
+%   stdev      ... standard deviation of the haemodynamic response.
 
 % DJS 2020
 
 
-
-if nargin < 3 || isempty(stdThresh), stdThresh = 3; end
+if nargin < 2 || isempty(stdThresh), stdThresh = 3; end
 
 if isa(obj,'fus.Volume')
     P = obj.Plane; % handles
@@ -42,5 +45,6 @@ for i = 1:length(P)
     hr = [hr; squeeze(M)];
 end
 
-hr = mean(hr(max(hr,[],2) < stdThresh,:));
-
+hr = hr(max(hr,[],2) < stdThresh,:);
+varargout{1} = mean(hr)';
+varargout{2} = std(hr)';
