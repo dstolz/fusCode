@@ -24,14 +24,14 @@ narginchk(3,4);
 if nargin < 4 || isempty(display), display = false; end
 
 tvec = obj.Time;
-% for i = 1:size(stimTimings,1)
-    stimInd = tvec >= eventTimes(1) & tvec <= eventTimes(2);
-    
-    stimVec = zeros(1,obj.nFrames);
-    stimVec(stimInd) = 1;
-    
-    y = conv(stimVec,HR,'full');
-% end
+
+stimInd = tvec >= eventTimes(1) & tvec <= eventTimes(2);
+
+stimVec = zeros(1,obj.nFrames);
+stimVec(stimInd) = 1;
+
+y = conv(stimVec,HR,'full');
+y = y';
 
 isAx = isa(display,'matlab.graphics.axis.Axes');
 if isAx || display    
