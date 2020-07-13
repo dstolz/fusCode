@@ -41,7 +41,7 @@ function varargout = estimate_hr(obj,eventOnset,maxHRDur,stdThresh)
 
 if nargin < 2 || isempty(eventOnset)
     eventOnset = 0;
-    warning('Default event onset = 0!')
+    warning('estimate_hr:EventOnsetAt0','Default event onset = 0!')
 end
 if nargin < 3 || isempty(maxHRDur),  maxHRDur = 10; end
 if nargin < 4 || isempty(stdThresh), stdThresh = 3; end
@@ -59,6 +59,10 @@ eventIdx = arrayfun(@(a) find(obj.Time >= a & obj.Time <= a+maxHRDur),eventOnset
 eventIdx(cellfun(@(a) lt(length(a),max(cellfun(@length,eventIdx))),eventIdx)) = [];
 nEvents = numel(eventIdx);
 eventIdx = cell2mat(eventIdx(:))';
+nOverlap = sum(eventIdx(1,2:end) < eventIdx(end,1:end-1));
+if nOverlap > 0
+    warning('estimate_hr:EventsOverlap','%d events overlap!',nOverlap)
+end
 eventIdx = eventIdx(:);
 
 hr = [];
