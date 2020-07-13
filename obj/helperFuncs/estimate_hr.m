@@ -1,7 +1,8 @@
-function varargout = estimate_hr(obj,eventOnset,stdThresh)
-% hr = estimate_hr(Volume,[eventOnset],[stdThresh])
+function varargout = estimate_hr(obj,eventOnset,maxHRDur,stdThresh)
+% hr = estimate_hr(Volume,[eventOnset],[maxHRDur],[stdThresh])
 % hr = estimate_hr(Plane,...)
 % [hr,stdev] = estimate_hr(...)
+% [hr,stdev,n] = estimate_hr(...)
 %
 % Estimate of the mean haemodynamic response function (Boubenec et al,
 % 2018):
@@ -12,9 +13,11 @@ function varargout = estimate_hr(obj,eventOnset,stdThresh)
 %
 % Inputs:
 %   obj        ... either one fus.Volume or one or more fus.Plane objects
-%   eventOnset ... 1x1 indicating the time at which the impulse event
-%                  occurs relative to trial onset.   
-%                  default eventOnset = 0, which is unlikely the case!
+%   eventOnset ... 1xN indicating the times at which the impulse event
+%                  occurs relative to trial onset (in seconds).
+%                  default eventOnset = 0, which is unlikely to be the case!
+%   maxHRDur   ... 1x1 indicating the maximum duration of a haemodynamic
+%                  response in seconds; default = 10
 %   stdThresh  ... standard deviation threshold. default = [3 6];
 %                  If 1x1: responses >= stdThresh are included in hr estimate.
 %                  If 1x2: responses >= stdThresh(1) & responses < stdThresh(2)
@@ -23,6 +26,8 @@ function varargout = estimate_hr(obj,eventOnset,stdThresh)
 % Output:
 %   hr         ... mean estimate of the haemodynamic response.
 %   stdev      ... standard deviation of hr estimate.
+%   n          ... number of waveforms averaged into haemodynamic response
+%                  estimate.
 %
 % Note that the returned waveform is the entire timecourse which likely
 % includes pre-response fluctuations that should be removed prior to
@@ -38,7 +43,8 @@ if nargin < 2 || isempty(eventOnset)
     eventOnset = 0;
     warning('Default event onset = 0!')
 end
-if nargin < 3 || isempty(stdThresh), stdThresh = 3; end
+if nargin < 3 || isempty(maxHRDur),  maxHRDur = 10; end
+if nargin < 4 || isempty(stdThresh), stdThresh = 3; end
 
 if isa(obj,'fus.Volume')
     P = obj.Plane; % handles
@@ -46,7 +52,14 @@ else
     P = obj; % handles
 end
 
-eventIdx = find(obj.Time >= eventOnset,1);
+if numel(stdThresh) == 1, stdThresh = [stdThresh inf]; end
+
+
+eventIdx = arrayfun(@(a) find(obj.Time >= a & obj.Time <= a+maxHRDur),eventOnset(:)','uni',0);
+eventIdx(cellfun(@(a) lt(length(a),max(cellfun(@length,eventIdx))),eventIdx)) = [];
+nEvents = numel(eventIdx);
+eventIdx = cell2mat(eventIdx(:))';
+eventIdx = eventIdx(:);
 
 hr = [];
 for i = 1:length(P)
@@ -54,20 +67,16 @@ for i = 1:length(P)
     M = squeeze(reshape(M,[prod(P(i).nYX) P(i).num.(P(i).TimeDim)]));
     M(any(isnan(M),2),:) = [];
     M = zscore(squeeze(M),0,'all');
-    hr = [hr; M(:,eventIdx:end)];
-end
-
-mx = max(hr,[],2);
-if numel(stdThresh) == 1
-    ind = mx >= stdThresh;
-else
+    M = reshape(M(:,eventIdx),size(M,1)*nEvents,[]);   
+    mx = max(M,[],2);
     ind = mx >= stdThresh(1) & mx < stdThresh(2);
+    M(~ind,:) = [];
+    hr = [hr; M];
 end
 
-hr = hr(ind,:);
 varargout{1} = mean(hr)';
 varargout{2} = std(hr)';
-
+varargout{3} = size(hr,1);
 
 
 
