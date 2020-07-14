@@ -15,17 +15,22 @@ imAx = roi.Parent;
 figH = imAx.Parent;
 
 
-d = obj.dim;
 n = obj.num;
 
 ind = createMask(roi);
 
-mROI = mean(plane_subset(obj.Data,ind),[d.Y d.X d.Trials],'omitnan');
+d = setdiff(obj.dimOrder,["Stim" obj.TimeDim]);
+mROI = mean(plane_subset(obj.Data,ind),obj.find_dim(d),'omitnan');
+
 mROI = squeeze(mROI);
+if size(mROI,2) == 1, mROI = mROI'; end
+
+nStim = size(mROI,1); % use this in case obj.dim.Stim does not exist
+
 xvec = 1:size(mROI,2);
 ivec = 1:0.25:xvec(end);
 if any(isnan(mROI(:)))
-    miROI = nan(n.Stim,length(ivec));
+    miROI = nan(nStim,length(ivec));
 else
     miROI = zeros(size(mROI,1),length(ivec));
     for i = 1:size(mROI,1)
@@ -36,6 +41,7 @@ clear mROI
 
 ivec = ivec';
 miROI = miROI';
+
 
 ax = findobj(figH,'tag','ROITimePlot');
 buildFlag = isempty(ax);
@@ -66,18 +72,23 @@ if isempty(zh)
         'Tag','zeroline');
 end
 
-cm = parula(n.Stim);
+if nStim == 1
+    cm = [0 0 0];
+else
+    cm = parula(nStim);
+end
+
 
 h = findobj(ax,'-regexp','tag','stimline*');
 if isempty(h)
-    for i = 1:n.Stim
+    for i = 1:nStim
         h(i) = line(ivec,miROI(:,i),'color',cm(i,:),'linewidth',2, ...
             'parent',ax,'tag',sprintf('stimline%d',i));
     end
 else
     [~,idx] = sort({h.Tag});
     h = h(idx);
-    for i = 1:n.Stim
+    for i = 1:nStim
         h(i).YData = miROI(:,i);
     end
 end
@@ -87,11 +98,13 @@ end
 % end
 
 if buildFlag
-    h = legend(ax,h, ...
-        'Location','EastOutside','Orientation','vertical');
-    h.String = cellstr(num2str((1:size(miROI,2))'))';
-    h.Title.String = 'StimID';
     
+    if isfield(n,'Stim')
+        h = legend(ax,h, ...
+            'Location','EastOutside','Orientation','vertical');
+        h.String = cellstr(num2str((1:size(miROI,2))'))';
+        h.Title.String = 'StimID';
+    end
     xlabel(ax,'frames','FontSize',12)
     xlabel(ax2,'time (s)','FontSize',12)
     
