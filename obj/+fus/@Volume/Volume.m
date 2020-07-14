@@ -43,9 +43,9 @@ classdef Volume < handle & matlab.mixin.Copyable
             obj.add_plane(data,dataDims);
         end
         
-        function add_plane(obj,data,dataDims)
-            % add_plane(obj,data,dataDims)
-            % add_plane(obj,fullFileName,[dataDims])
+        function add_plane(obj,data,dataDims,Fs)
+            % add_plane(obj,data,dataDims,[Fs])
+            % add_plane(obj,fullFileName,[dataDims],[Fs])
             
             if ischar(data) || isstring(data)
                 load(data,'-mat'); % may contain dataDims
@@ -54,19 +54,20 @@ classdef Volume < handle & matlab.mixin.Copyable
 %             assert(ndims(data) == length(dims), 'fus:Volume:DimMismatch', ...
 %                 'ndims(data) ~= length(dims)');
             
-            if nargin < 2, dataDims = []; end
+            if nargin < 3, dataDims = []; end
+            if nargin < 4, Fs = 1; end
             
             
             pidx = find(strcmpi('Planes',dataDims) | strcmpi('Plane',dataDims),1);
             if isempty(pidx) % just one plane
-                obj.Plane(end+1) = fus.Plane(data,dataDims,obj.nPlanes+1);
+                obj.Plane(end+1) = fus.Plane(data,dataDims,obj.nPlanes+1,Fs);
             else % multiple planes
                 idx = cell(1,length(dataDims));
                 dataDims(pidx) = [];
                 for i = 1:size(data,pidx)
                     idx(:) = {':'};
                     idx{pidx} = i;
-                    obj.Plane(end+1) = fus.Plane(data(idx{:}),dataDims,obj.nPlanes+1);
+                    obj.Plane(end+1) = fus.Plane(data(idx{:}),dataDims,obj.nPlanes+1,Fs);
                 end
             end
         end

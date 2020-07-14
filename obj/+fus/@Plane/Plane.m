@@ -79,10 +79,11 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
          
          
          
-        function obj = Plane(data,dataDims,id)
+        function obj = Plane(data,dataDims,id,Fs)
             if nargin < 1, data = [];     end
             if nargin < 2, dataDims = ""; end
             if nargin < 3, id = 1;        end
+            if nargin < 4, Fs = 1;        end
             
             postsets = {'Fs','spatialTform','useSpatialTform','spatialCoords','spatialDims','useMask'};
             cellfun(@(a) addlistener(obj,a,'PostSet',@obj.update_log),postsets);
@@ -94,6 +95,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             obj.create_Structural;
             
             obj.id = id;
+            obj.Fs = Fs;
         end
         
         function set_Data(obj,data,dataDims)
