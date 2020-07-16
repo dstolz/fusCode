@@ -9,7 +9,7 @@ classdef Volume < handle & matlab.mixin.Copyable
         Plane   (:,1) fus.Plane
         
         Name    (1,1) string = "Unnamed Volume"
-        
+                
         realworldCoords     (1,3) = [0 0 0];
         spatialTform        (1,1) = affine3d;
         spatialUnits        (1,1) string = "mm";
@@ -92,13 +92,17 @@ classdef Volume < handle & matlab.mixin.Copyable
             % data = cat(obj,field,[dim],[ids])
             % Concatenate fields of all, or a subset of Planes
             
-            if nargin < 3 || isempty(dim), dim = 3; end
+            if nargin < 3, dim = []; end
             if nargin < 4 || isempty(ids) || all(ids == 0), ids = 1:obj.nPlanes; end
             
             
             ids = intersect(1:obj.nPlanes,ids);
             
             P = obj.Plane(ids);
+            
+            if isempty(dim)
+                dim = P(1).nDims+1;
+            end
             
             data = [];
             for i = 1:length(ids)
