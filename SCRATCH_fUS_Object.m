@@ -69,8 +69,20 @@ end
 V.Name = n;
 
 disp(V)
+fprintf('Plane dimOrder: %s\nPlane dimSizes: %s\n', ...
+    strjoin(V.Plane(1).dimOrder,' x '), ...
+    mat2str(V.Plane(1).dimSizes))
 
-
+%% Rearrange raw data Volume by the "Freq" Event
+eventName = "Freq";
+for i = 1:V.nPlanes
+    V.Plane(i) = V.Plane(i).arrange_data_by_event(eventName,[],[-10 10],"Plane");
+    V.Plane(i).update_log('Rearranged raw data by "%s"',eventName);
+end
+disp(V)
+fprintf('Plane dimOrder: %s\nPlane dimSizes: %s\n', ...
+    strjoin(V.Plane(1).dimOrder,' x '), ...
+    mat2str(V.Plane(1).dimSizes))
 
 
 %% View montage of "Structural"
