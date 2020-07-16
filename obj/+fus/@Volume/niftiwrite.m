@@ -13,11 +13,25 @@ end
 
 if isempty(ids), ids = 1:obj.nPlanes; end
 
-v = obj.cat(field,3,ids);
+dim = ndims(obj.Plane(ids(1)).(field)) + 1;
+v = obj.cat(field,dim,ids);
+
+if dim >= 3
+    spc = obj.Plane(ids(1)).spatialDims;
+end
+
+if dim >= 4
+    v = permute(v,[1 2 4 3]);
+    spc = [spc 1/obj.Plane(ids(1)).Fs];
+end
+    
+if dim >= 5
+    spc = [spc ones(1,dim-4)];
+end
 
 niftiwrite(v,ffn);
 ninfo = niftiinfo(ffn);
-ninfo.PixelDimensions = obj.Plane(ids(1)).spatialDims;
+ninfo.PixelDimensions = spc;
 ninfo.Transform = obj.spatialTform;
 niftiwrite(v,ffn,ninfo);
 fprintf('Wrote: <a href = "matlab:system(''start %s'')">%s</a>\n',ffn,ffn)
