@@ -74,16 +74,27 @@ classdef Volume < handle & matlab.mixin.Copyable
         
         
         
-        function process_planes(obj,func,varargin)
+        function output = process_planes(obj,func,varargin)
             for i = 1:obj.nPlanes
-                func(obj.Plane(i),varargin{:});
+                if nargout == 0
+                    func(obj.Plane(i),varargin{:});
+                else
+                    output{i} = func(obj.Plane(i),varargin{:});
+                end
             end
         end
         
-        function process_planes_parallel(obj,func,varargin)
+        function output = process_planes_parallel(obj,func,varargin)
             obj.check_parallel;
-            parfor i = 1:obj.nPlanes
-                func(obj.Plane(i),varargin{:}); %#ok<PFBNS>
+            
+            if nargout == 0
+                parfor i = 1:obj.nPlanes
+                    func(obj.Plane(i),varargin{:}); %#ok<PFBNS>
+                end
+            else
+                parfor i = 1:obj.nPlanes
+                    output{i} = func(obj.Plane(i),varargin{:}); %#ok<PFBNS>
+                end
             end
         end
         
