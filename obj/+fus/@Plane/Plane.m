@@ -9,6 +9,8 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     properties (SetObservable)
         Mask        (1,1) %fus.Mask
         
+        Event       (:,1) fus.Event
+        
         Structural  (:,:) {mustBeNumeric}
         
         bgPlane     (1,1) % fus.Plane
@@ -22,11 +24,11 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         
         dispTransparency double {mustBeNonnegative,mustBeLessThanOrEqual(dispTransparency,1)} = 0; % alpha = 1-dispTransparency
         
-        colormap            (:,3) = parula;
-        spatialDims         (1,3) {mustBePositive,mustBeFinite,mustBeNonempty} = [.1 .1 .3];
-        spatialCoords       (1,3) {mustBeFinite,mustBeNonempty} = [0 0 0];
-        spatialUnits        (1,1) string = "mm";
-        spatialTform        (1,1) affine2d = affine2d;
+        colormap           (:,3) = parula;
+        spatialDims        (1,3) {mustBePositive,mustBeFinite,mustBeNonempty} = [.1 .1 .3];
+        spatialCoords      (1,3) {mustBeFinite,mustBeNonempty} = [0 0 0];
+        spatialUnits       (1,1) string = "mm";
+        spatialTform       (1,1) affine2d = affine2d;
         
         useMask            (1,1) logical = true;
     end
@@ -160,7 +162,6 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             % data = reshape_data(obj,newShape)            
             
             try
-                                
                 rind = cellfun(@isempty,newShape); % [] == remaining dims
                 assert(nnz(rind)<=1,'fus:Plane:reshape_data:InvalidShape', ...
                     '[] can only be used zero or one times');
@@ -270,6 +271,15 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             end
         end
         
+        
+        
+        function ev = get_event(obj,name)
+            ev = [];
+            ind = string(name) == [obj.Event.Name];
+            if any(ind)
+                ev = obj.Event(ind);
+            end
+        end
         
     end % methods (Public); functions
     
