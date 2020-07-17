@@ -35,7 +35,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         
         timeDimName     (1,1) string = "Time";
         eventDimName    (1,1) string = "Events";
-        repDimName      (1,1) string = "Reps";
+        repsDimName     (1,1) string = "Reps";
     end
     
     properties (Dependent)
