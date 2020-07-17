@@ -61,14 +61,14 @@ classdef Volume < handle & matlab.mixin.Copyable
             
             pidx = find(strcmpi('Planes',dataDims) | strcmpi('Plane',dataDims),1);
             if isempty(pidx) % just one plane
-                obj.Plane(end+1) = fus.Plane(data,dataDims,obj.nPlanes+1,Fs);
+                obj.Plane(end+1) = fus.Plane(obj,data,dataDims,obj.nPlanes+1,Fs);
             else % multiple planes
                 idx = cell(1,length(dataDims));
                 dataDims(pidx) = [];
                 for i = 1:size(data,pidx)
                     idx(:) = {':'};
                     idx{pidx} = i;
-                    obj.Plane(end+1) = fus.Plane(data(idx{:}),dataDims,obj.nPlanes+1,Fs);
+                    obj.Plane(end+1) = fus.Plane(obj,data(idx{:}),dataDims,obj.nPlanes+1,Fs);
                 end
             end
         end

@@ -81,18 +81,17 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     end
     
     
-    methods
-        explorer(obj,roiType,logScale)
-        explorer_update(obj,roi,event,imAx)
-        y = expt_design(obj,HR,stimOnOff,display)
-        h = image(obj,varargin)
-         
-         
-        function obj = Plane(data,dataDims,id,Fs)
-            if nargin < 1, data = [];     end
-            if nargin < 2, dataDims = ""; end
-            if nargin < 3, id = 1;        end
-            if nargin < 4, Fs = 1;        end
+    properties (SetAccess = immutable)
+        Parent
+    end
+    
+    methods (Access = ?fus.Volume)         
+        function obj = Plane(V,data,dataDims,id,Fs)
+            obj.Parent = V;
+            if nargin < 2, data = [];     end
+            if nargin < 3, dataDims = ""; end
+            if nargin < 4, id = 1;        end
+            if nargin < 5, Fs = 1;        end
             
             postsets = {'Fs','spatialTform','useSpatialTform','spatialCoords','spatialDims','useMask'};
             cellfun(@(a) addlistener(obj,a,'PostSet',@obj.update_log),postsets);
@@ -106,6 +105,14 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             obj.id = id;
             obj.Fs = Fs;
         end
+    end
+    
+    methods
+        explorer(obj,roiType,logScale)
+        explorer_update(obj,roi,event,imAx)
+        y = expt_design(obj,HR,stimOnOff,display)
+        h = image(obj,varargin)
+         
         
         function set_Data(obj,data,dataDims)
             % set_Data(obj,data,[dataDims])
@@ -355,8 +362,13 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         end
         
         function n = get.Name(obj)
-             n = sprintf('Plane %d',obj.id);
+             n = compose("Plane %d",obj.id);
         end
+        
+%         function n = get.FullName(obj)
+% %              if 
+%              n = compose("Plane %d",obj.id);
+%         end
         
         function set.useSpatialTform(obj,tf)
             inv = ~tf;
