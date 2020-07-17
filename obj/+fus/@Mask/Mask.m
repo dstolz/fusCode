@@ -44,10 +44,10 @@ classdef Mask < handle
             
             obj.Parent.image(ax);
             
-            ax.Title.String = {sprintf('ROI for Plane %d',obj.Parent.id), ...
-                               'Click and drag your left mouse to begin.', ...
+            ax.Title.String = {sprintf('ROI for %s',obj.Parent.FullName), ...
+                               'Left mouse to begin. Dbl-click left mouse to complete.', ...
                                '"Enter" to finish,"Esc" to cancel,"?" for help'};
-            
+            ax.Title.Interpreter = 'none';
             ax.Parent.WindowKeyPressFcn = @obj.exit_roi;
             
             roi = images.roi.(tool)('linewidth',3,'color','c', ...
@@ -77,6 +77,8 @@ classdef Mask < handle
             
             ax = subplot(4,1,[1 3]);
             obj.show_mask(ax);
+            ax.Title.String = obj.Parent.FullName;
+            ax.Title.Interpreter = 'none';
             ch = colorbar(ax);
             ch.Label.String = 'pixel value';
             
