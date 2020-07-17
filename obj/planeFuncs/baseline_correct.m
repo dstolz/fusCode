@@ -17,7 +17,7 @@ function baseline_correct(obj,baselineWindow,bcFcn)
 %                       input is the mean of the baseline window of the
 %                       data and is an MxP matrix where M is same as the
 %                       first input and P = baseline samples.
-%                       Default = @(a,b) (a-mean(b,2)./mean(b,2))
+%                       Default = @(a,b) ((a-mean(b,2))./mean(b,2))
 %
 
 % DJS 2020
@@ -25,7 +25,7 @@ function baseline_correct(obj,baselineWindow,bcFcn)
 narginchk(2,3)
 
 if isscalar(baselineWindow), baselineWindow = [0 baselineWindow]; end
-if nargin < 3 || isempty(bcFcn), bcFcn = @(a,b) (a-mean(b,2)./mean(b,2)); end
+if nargin < 3 || isempty(bcFcn), bcFcn = @(a,b) ((a-mean(b,2))./mean(b,2)); end
 
 fidx = obj.Time >= baselineWindow(1) & obj.Time <= baselineWindow(2);
 
