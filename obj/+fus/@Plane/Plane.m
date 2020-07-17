@@ -380,7 +380,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         end
         
         function d = get.eventDim(obj)
-            d = obj.find_dim(obj.evemtDimName);
+            d = obj.find_dim(obj.eventDimName);
         end
         
         function d = get.repsDim(obj)
