@@ -52,6 +52,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         nFrames
         
         Name
+        FullName
         
         timeDim
         eventDim
@@ -365,10 +366,9 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
              n = compose("Plane %d",obj.id);
         end
         
-%         function n = get.FullName(obj)
-% %              if 
-%              n = compose("Plane %d",obj.id);
-%         end
+        function n = get.FullName(obj)
+             n = compose("%s - Plane %d",obj.Parent.Name,obj.id);
+        end
         
         function set.useSpatialTform(obj,tf)
             inv = ~tf;
