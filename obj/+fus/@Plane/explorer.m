@@ -14,9 +14,9 @@ if nargin < 2 || isempty(tool),  tool = 'Rectangle'; end
 mustBeMember(tool,{'Assisted','Circle','Ellipse','Freehand','Polygon','Rectangle'});
 
 
-f = findobj('type','figure','-and','tag',['ROIfig_' obj.FullName]);
+f = findobj('type','figure','-and','tag',strcat("ROIfig_", obj.FullName));
 if isempty(f)
-    f = figure('tag',['ROIfig_' obj.FullName],'name',obj.FullName,'Color','w','NumberTitle','off');
+    f = figure('tag',strcat("ROIfig_", obj.FullName),'name',obj.FullName,'Color','w','NumberTitle','off');
 end
 
 f.Position([3 4]) = [500 600];
@@ -39,14 +39,14 @@ fprintf('Click the image to create an ROI.\nUse right-click for additional optio
 
 roi = images.roi.(tool)('linewidth',2,'color',[1 .8 0], ...
     'deletable',false,'Parent',ax,'FaceSelectable',true, ...
-    'Tag',['ROI_' obj.Name]);
+    'Tag',strcat("ROI_", obj.FullName));
 
 draw(roi);
 
 
 if isempty(roi), return; end
 
-title(ax,t,'Interpreter','none')
+title(ax,obj.FullName,'Interpreter','none')
 
 % start the roi plot
 obj.explorer_update(roi);

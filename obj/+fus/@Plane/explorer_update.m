@@ -9,7 +9,7 @@ function explorer_update(obj,src,event)
 
 
 
-roi = findobj('Tag',['ROI_' obj.Name]);
+roi = findobj('Tag',strcat("ROI_", obj.FullName));
 
 imAx = roi.Parent;
 figH = imAx.Parent;
