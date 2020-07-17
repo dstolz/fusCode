@@ -19,13 +19,13 @@ n = obj.num;
 
 ind = createMask(roi);
 
-d = setdiff(obj.dimOrder,["Stim" obj.TimeDim]);
+d = setdiff(obj.dimOrder,[obj.eventDimName obj.timeDimName]);
 mROI = mean(plane_subset(obj.Data,ind),obj.find_dim(d),'omitnan');
 
 mROI = squeeze(mROI);
-if size(mROI,2) == 1, mROI = mROI'; end
+if size(mROI,2) == n.(obj.eventDimName), mROI = mROI'; end
 
-nStim = size(mROI,1); % use this in case obj.dim.Stim does not exist
+nStim = size(mROI,1); % use this in case obj.dim.(obj.eventDimName) does not exist
 
 xvec = 1:size(mROI,2);
 ivec = 1:0.25:xvec(end);
@@ -52,8 +52,8 @@ if buildFlag
         'ytick',[],'tag','ROITimePlot2');
     grid(ax,'on');
     
-    ax.XLim     = [1 n.Frames];
-    ax2.XLim    = [0 (n.Frames-1)/obj.Fs];
+    ax.XLim     = [1 n.(obj.timeDimName)];
+    ax2.XLim    = [0 (n.(obj.timeDimName)-1)/obj.Fs];
     ax.XAxisLocation = 'top';
     
     
@@ -93,24 +93,25 @@ else
     end
 end
 
-% if ~all(isnan(miROI(:)))
-%     ylim(ax,[-1.1 1.1]*max(abs(miROI(:))));
-% end
-
 if buildFlag
-    
-    if isfield(n,'Stim')
+    if isfield(n,obj.eventDimName)
         h = legend(ax,h, ...
             'Location','EastOutside','Orientation','vertical');
-        h.String = cellstr(num2str((1:size(miROI,2))'))';
-        h.Title.String = 'StimID';
+        
+        if isempty(obj.Event)
+            h.String = string(1:size(miROI,2));
+            h.Title.String = 'EventID';
+        else
+            h.String = obj.Event.uValueStr;
+            h.Title.String = obj.Event.Name;
+        end
     end
     xlabel(ax,'frames','FontSize',12)
     xlabel(ax2,'time (s)','FontSize',12)
     
     ax2.Position = ax.Position;
 end
-ylabel(ax,{sprintf('Average of %d pixels in ROI',nnz(ind & obj.Mask.mask)); 'mean ampl. (arb units)'})
+ylabel(ax,{sprintf('%d pixels in ROI',nnz(ind & obj.Mask.mask)); 'mean ampl. (arb units)'})
 
 
 

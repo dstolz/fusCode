@@ -42,17 +42,22 @@ classdef Mask < handle
             f = figure('color','w','name','Mask');
             ax = axes(f);
             
-            ax.Parent.WindowKeyPressFcn = @obj.exit_roi;
+            obj.Parent.image(ax);
             
+            ax.Title.String = {sprintf('ROI for Plane %d',obj.Parent.id), ...
+                               'Click and drag your left mouse to begin.', ...
+                               '"Enter" to finish,"Esc" to cancel,"?" for help'};
+            
+            ax.Parent.WindowKeyPressFcn = @obj.exit_roi;
             
             roi = images.roi.(tool)('linewidth',3,'color','c', ...
                 'deletable',false,'Parent',ax,'FaceSelectable',false, ...
-                'InteractionsAllowed','reshape','Multiclick',true, ...
+                'Multiclick',true, ...
                 'Tag',obj.uniqueTag);
             
             if obj.initialized
                 c = obj.coords;
-                roi.Position = fliplr(c);
+                roi.Position = c;
                 roi.Waypoints = ismember(1:size(c,1),round(linspace(1,size(c,1),10)))';
             else
                 draw(roi);
@@ -106,22 +111,12 @@ classdef Mask < handle
         
         function h = show_mask(obj,ax,varargin)
             if nargin < 2, ax = gca; end
-            h(1) = obj.show_structural(ax);
+            h(1) = obj.Parent.image(ax);
             h(2) = obj.draw_overlay(ax);
         end
         
         
         
-        function h = show_structural(obj,ax)
-            if nargin < 2, ax = gca; end
-            h = imagesc(ax,obj.Parent.Structural);
-            h.Tag = ['Structural_' obj.uniqueTag];
-            axis(ax,'image');
-            ax.XAxis.TickValues = [];
-            ax.YAxis.TickValues = [];
-            ax.Title.String = obj.Parent.Name;
-            colormap(ax,bone(512));
-        end
         
         function h = draw_overlay(obj,ax)
             if nargin < 2, ax = gca; end

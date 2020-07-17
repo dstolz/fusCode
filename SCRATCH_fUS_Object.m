@@ -1,28 +1,55 @@
-%% Add fusCode to Matlab's path
-addpath(genpath('c:\src\fusCode'))
+%% Add fusCode to Matlab's path - only need to do this once per session.
+% Alternatively, use the pathtool to permanently add fusCode and
+% subdirectories to Matlab's path.
+addpath(genpath(fullfile(cd,'\fusCode')))
+
+
+
+
+
+
+
 
 
 
 
 %% Example 1: Add planes to a new Volume object
-load('D:\fUS_Data\Boubenec\Data_Bright_AC\Boubenec_Data_Bright_AC.mat')
+filename = 'D:\fUS_Data\Boubenec\Data_Bright_AC\Boubenec_Data_Bright_AC.mat';
+load(filename) % loades variable "epoch_bef"
 
 % dims are in the same order as that of the loaded data
 % Dims 'Y' and 'X' must come first
-dims = {'Y','X','Stim','Trials','Frames','Planes'};
+dims = {'Y','X','Events','Reps','Time','Planes'};
 
 V = fus.Volume(epoch_bef,dims); % create Volume
 
+[~,V.Name,~] = fileparts(filename); % optionally set the Volume's name
+
+
 clear epoch_bef % don't need original data anymore
+
 
 disp(V)
 
 
 
-%% Example 2: Load raw data and stimulus Events into a Volume
-pth = 'D:\fUS_Data\Ali_RawData\rum069'; % Root directory
 
-dims = {'Y','X','Frames'}; % dims must start with 'Y','X',...
+
+
+
+
+
+
+
+
+
+
+
+%% Example 2A: Load raw data and stimulus Events into a Volume
+pth = 'D:\fUS_Data\Ali_RawData\rum069'; % Root directory with raw Plane data in subfolders
+
+
+dims = {'Y','X','Time'}; % dims must start with 'Y','X',...
 
 % find all planes stored within the current directory
 d = dir(pth);
@@ -30,13 +57,11 @@ d([1 2]) = [];
 d(~[d.isdir]) = [];
 
 
-
-
-stim = [602 1430 3400 8087 19234];
+stim = [602 1430 3400 8087 19234]; % stimulus parameters are manually secified
 load('D:\fUS_Data\Ali_RawData\rum069\info_Tonotopics_rum069.mat'); % info
 % manipulate info -> Plane x event
-stim = stim(info(1:2:end,:));
-trialOnsetIdx = info(2:2:end,:);
+stim = stim(info(1:2:end,:)); % extract stimulus ids from loaded format
+trialOnsetIdx = info(2:2:end,:); % extract onset frames from loaded format
 stimDelay    = 10; % sec ??? not specified in file
 stimDuration = 3;  % sec ??? not specified in file
 
@@ -45,7 +70,7 @@ clear E
 
 V = fus.Volume; % initialize
 for i = 1:length(d)
-    % load the acquisition file
+    % load the acquisition file which is a structure called Acquisition
     lpth = fullfile(d(i).folder,d(i).name);
     f = dir(fullfile(lpth,'*.acq'));
     ffn = fullfile(f.folder,f.name);
@@ -58,22 +83,22 @@ for i = 1:length(d)
     
     clear Acquisition % discard original data
     
-    V.add_plane(data,dims,Fs);
-    
+    V.add_plane(data,dims,Fs); % add the new data as a Plane in the Volume
 
     stimOnsetTime = (trialOnsetIdx(i,:)-1)./Fs+stimDelay;
     V.Plane(i).Event = fus.Event('Freq',stimOnsetTime,stim(i,:),stimDuration,Fs,'Hz');
 end
 
-[~,n] = fileparts(pth);
-V.Name = n;
+[~,V.Name,~] = fileparts(pth); % optionally set the Volume's name
+
 
 disp(V)
 fprintf('Plane dimOrder: %s\nPlane dimSizes: %s\n', ...
     strjoin(V.Plane(1).dimOrder,' x '), ...
     mat2str(V.Plane(1).dimSizes))
 
-%% Rearrange raw data Volume by the "Freq" Event
+
+%% Example 2B - Rearrange raw data Volume by the "Freq" Event
 eventName = "Freq";
 for i = 1:V.nPlanes
     V.Plane(i) = V.Plane(i).arrange_data_by_event(eventName,[],[-10 10],"Plane");
@@ -85,9 +110,25 @@ fprintf('Plane dimOrder: %s\nPlane dimSizes: %s\n', ...
     mat2str(V.Plane(1).dimSizes))
 
 
+
+
+
+
+
+
+
+
+
 %% View montage of "Structural"
 figure
 V.montage;
+
+
+
+
+
+
+
 
 
 %% Explore averaged trial data for each stimulus for a plane
@@ -99,19 +140,38 @@ V.Plane(planeID).explorer; % defaults to 'Rectangle'
 
 
 
+
+
+
+
+
+
 %% Rigid alignment of all planes
 V.align_planes;
 
 
+
+
+
+
+
+
+
+
+
 %% Volumetric spatial smoothing
-N = [3 3 3];
+N = [3 3 3]; % Y x X x Time
 V.smooth(N);
+
+
+
+
 
 %% Create data mask. Uncomment one method
 thresholdGuess = 2;
 for i = 1:V.nPlanes
     % Method 1: Manually draw masks on each Plane
-    % V.Plane(i).Mask.create_roi;       
+%     V.Plane(i).Mask.create_roi;       
 
     % Method 2: Threshold based on pixel luminance; Click the histogram to
     % adjust the threshold. Hit any key to move on to the next plane.
@@ -124,10 +184,18 @@ end
 
 
 %% Apply Baseline correction to all planes in the volume
-% process_planes is a convenient function for running the same function on
+% batch is a convenient function for running the same function on
 % all planes.
 baselineWindow = [0 8]; % seconds
-V.process_planes(@baseline_correct,baselineWindow);
+V.batch(@baseline_correct,baselineWindow);
+
+
+
+
+
+
+
+
 
 
 %% Use the Log associated with each plane to see how the Plane Data has been manipulated so far

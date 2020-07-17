@@ -67,8 +67,8 @@ eventIdx = eventIdx(:);
 
 hr = [];
 for i = 1:length(P)
-    M = mean(P(i).Data,setdiff(1:P(i).nDims,[1 2 P(i).dim.(P(i).TimeDim)]));
-    M = squeeze(reshape(M,[prod(P(i).nYX) P(i).num.(P(i).TimeDim)]));
+    M = mean(P(i).Data,setdiff(1:P(i).nDims,[1 2 P(i).dim.(P(i).timeDimName)]));
+    M = squeeze(reshape(M,[prod(P(i).nYX) P(i).num.(P(i).timeDimName)]));
     M(any(isnan(M),2),:) = [];
     M = zscore(squeeze(M),0,'all');
     M = reshape(M(:,eventIdx),size(M,1)*nEvents,[]);   

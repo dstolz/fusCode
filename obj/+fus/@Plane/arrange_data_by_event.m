@@ -59,7 +59,7 @@ S = Ev.get_Data(values,"struct","samples");
 
 
 if obj.nDims == 3 % X x Y x Time -> X*Y x Time
-    data = obj.reshape_data(["X*Y" obj.TimeDim]);
+    data = obj.reshape_data(["X*Y" obj.timeDimName]);
 else
     data = obj.Data;
 end
@@ -101,13 +101,15 @@ end
 if retType == "Plane"
     P = copy(obj);
     if ndims(A) == 4
-        dataDims = ["Y_X" "Reps" "Samples" "Events"];
+        dataDims = ["Y_X" "Reps" "Frames" "Events"];
     else
-        dataDims = ["Y" "X" "Reps" "Samples" "Events"];
+        dataDims = ["Y" "X" "Reps" "Frames" "Events"];
     end
     
     P.set_Data(A,dataDims);
-    P.TimeDim = "Samples";
+    P.timeDimName  = "Frames";
+    P.eventDimName = "Events";
+    P.repsDimName  = "Reps";
     A = P;
 end
 

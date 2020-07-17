@@ -1,5 +1,6 @@
 function [X,h] = montage(obj,ax,varargin)
-% [X,h] = montage(obj,ax,varargin)
+% montage(obj,[ax])
+% [X,h] = montage(obj,...,'name','value',...)
 %
 % 'name','value' options
 % datafield     ... which Plane subfield to display, default = 'Structural'

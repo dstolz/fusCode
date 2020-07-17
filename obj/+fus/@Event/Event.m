@@ -18,6 +18,7 @@ classdef Event < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         OnOffTime
         OnOffSample
         uValue
+        uValueStr
     end
     
     properties (SetAccess = immutable)
@@ -89,7 +90,6 @@ classdef Event < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         
         
         
-        
         function t = get.OnOffTime(obj)
             t = obj.Onset + [0 obj.Duration];
         end
@@ -102,6 +102,11 @@ classdef Event < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             u = unique(obj.Value);
         end
         
+        function s = get.uValueStr(obj)
+            s = string(obj.uValue);
+            s = strcat(s, obj.Unit);
+        end
+
         
         
     end % method (Public)

@@ -3,6 +3,7 @@ classdef Volume < handle & matlab.mixin.Copyable
     
     properties        
         UserData
+        
     end
     
     properties (SetObservable = true)
@@ -74,7 +75,7 @@ classdef Volume < handle & matlab.mixin.Copyable
         
         
         
-        function output = process_planes(obj,func,varargin)
+        function output = batch(obj,func,varargin)
             for i = 1:obj.nPlanes
                 if nargout == 0
                     func(obj.Plane(i),varargin{:});
@@ -84,7 +85,7 @@ classdef Volume < handle & matlab.mixin.Copyable
             end
         end
         
-        function output = process_planes_parallel(obj,func,varargin)
+        function output = batch_parallel(obj,func,varargin)
             obj.check_parallel;
             
             if nargout == 0

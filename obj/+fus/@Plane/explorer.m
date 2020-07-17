@@ -29,10 +29,7 @@ movegui(f)
 
 ax = axes(f,'Units','Normalized','Position',[.1 .5 .8 .4],'Tag','PlaneImage');
 
-imagesc(ax,X);
-axis(ax,'image')
-set(ax,'xtick',[],'ytick',[]);
-colormap(ax,bone(512))
+obj.image(ax);
 
 hold(ax,'on')
 h = obj.Mask.draw_overlay(ax);

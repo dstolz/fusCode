@@ -31,6 +31,11 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         spatialTform       (1,1) affine2d = affine2d;
         
         useMask            (1,1) logical = true;
+        
+        
+        timeDimName     (1,1) string = "Time";
+        eventDimName    (1,1) string = "Events";
+        repDimName      (1,1) string = "Reps";
     end
     
     properties (Dependent)
@@ -47,6 +52,10 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         nFrames
         
         Name
+        
+        timeDim
+        eventDim
+        repsDim
     end
     
     properties (Dependent, Hidden)
@@ -61,8 +70,6 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         Log
         
         nYX         (1,2)
-        
-        TimeDim     (1,1) string = "Frames"
     end
     
     properties (SetAccess = private)
@@ -78,7 +85,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         explorer(obj,roiType,logScale)
         explorer_update(obj,roi,event,imAx)
         y = expt_design(obj,HR,stimOnOff,display)
-         
+        h = image(obj,varargin)
          
          
         function obj = Plane(data,dataDims,id,Fs)
@@ -162,10 +169,14 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             % data = reshape_data(obj,newShape)            
             
             try
-                rind = cellfun(@isempty,newShape); % [] == remaining dims
+                rind = cellfun(@isempty,newShape); % '' == remaining dims
                 assert(nnz(rind)<=1,'fus:Plane:reshape_data:InvalidShape', ...
                     '[] can only be used zero or one times');
                 
+                newShape(rind) = {''};
+                
+                newShape = cellstr(newShape);
+
                 
                 newNum = repmat({1},size(newShape));
                 n = obj.num;
@@ -335,12 +346,12 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         end
         
         function t = get.Time(obj)
-            t = 0:obj.num.(obj.TimeDim)-1;
+            t = 0:obj.num.(obj.timeDimName)-1;
             t = t ./ obj.Fs;
         end
         
         function n = get.nFrames(obj)
-            n = obj.num.(obj.TimeDim);
+            n = obj.num.(obj.timeDimName);
         end
         
         function n = get.Name(obj)
@@ -352,7 +363,17 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             apply_spatial_tform(obj,inv);
         end
         
+        function d = get.timeDim(obj)
+            d = obj.find_dim(obj.timeDimName);
+        end
         
+        function d = get.eventDim(obj)
+            d = obj.find_dim(obj.evemtDimName);
+        end
+        
+        function d = get.repsDim(obj)
+            d = obj.find_dim(obj.repsDimName);
+        end
         
     end % methods (Public); set/get
     
