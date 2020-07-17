@@ -1,27 +1,22 @@
-function explorer(obj,tool,logScale)
-% explorer(Plane,[roiType],[logScale])
+function explorer(obj,tool)
+% explorer(Plane,[roiType])
 %
 % Plane     ... a single Plane object.
 % roiType   ... Determines how to interact with the ROI.
 %               valid values: 'circle','rectangle','freehand',
 %               'assisted','ellipse', or 'polygon' (default)
-% logScale  ... Scales image colors logarithmically (default = true)
 
 % DJS 2020
 
 
 if nargin < 2 || isempty(tool),  tool = 'Rectangle'; end
-if nargin < 3 || isempty(logScale), logScale = true;       end
 
 mustBeMember(tool,{'Assisted','Circle','Ellipse','Freehand','Polygon','Rectangle'});
 
-X = obj.Structural;
 
-if logScale, X = log10(X); end
-
-f = findobj('type','figure','-and','tag',['ROIfig_' obj.Name]);
+f = findobj('type','figure','-and','tag',['ROIfig_' obj.FullName]);
 if isempty(f)
-    f = figure('tag',['ROIfig_' obj.Name],'name',obj.Name,'Color','w');
+    f = figure('tag',['ROIfig_' obj.FullName],'name',obj.FullName,'Color','w','NumberTitle','off');
 end
 
 f.Position([3 4]) = [500 600];
@@ -37,8 +32,7 @@ h.FaceAlpha = 0;
 h.EdgeAlpha = .5;
 hold(ax,'off')
 
-t = sprintf("Plane %d",obj.id);
-title(ax,["Click the image to create an ROI" t],'Interpreter','none')
+title(ax,["Click the image to create an ROI" obj.FullName],'Interpreter','none')
 
 fprintf('Click the image to create an ROI.\nUse right-click for additional options.\n')
 
