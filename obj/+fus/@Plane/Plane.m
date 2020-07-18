@@ -286,7 +286,13 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             if nRecent <= 0 || isinf(nRecent), nRecent = length(obj.Log); end
             n = length(obj.Log)-nRecent+1;
             for i = n:length(obj.Log)
-                fprintf(' %02d. %s: %s\n',i,datestr(obj.Log(i).time,21),obj.Log(i).message)
+                if isa(obj.Log(i).message,'MException')
+                    msg = [obj.Log(i).message.identifier '; ' obj.Log(i).message.message];
+                    fprintf(2,' %02d. %s: %s\n',i,datestr(obj.Log(i).time,21),msg)
+                else
+                    msg = obj.Log(i).message;
+                    fprintf(' %02d. %s: %s\n',i,datestr(obj.Log(i).time,21),msg)
+                end
             end
         end
         
