@@ -78,7 +78,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     end
     
     properties (SetAccess = private, Hidden)
-        initialized     = false;
+        initialized = false;
     end
     
     
@@ -401,6 +401,9 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     
     methods (Access = protected)
         function apply_spatial_tform(obj,inv)
+            
+            if ~obj.initialized, return; end
+            
             if inv
                 if obj.transformState == 0, return; end % don't do anything
                 tform = invert(obj.spatialTform);
@@ -409,6 +412,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
                 tform = obj.spatialTform;
                 obj.transformState = 1;
             end
+                        
             d = imwarp(obj.Data,tform,'FillValues',nan);
             obj.Data = center_crop(d,obj.nYX);
             
