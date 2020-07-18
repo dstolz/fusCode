@@ -29,7 +29,7 @@ if nargin < 3 || isempty(bcFcn), bcFcn = @(a,b) ((a-mean(b,2))./mean(b,2)); end
 
 fidx = obj.Time >= baselineWindow(1) & obj.Time <= baselineWindow(2);
 
-data = obj.reshape_data([join(["Y" "X" obj.repDimName obj.eventDimName],"*"),obj.timeDimName]);
+data = obj.reshape_data([join(["Y" "X" obj.repsDimName obj.eventDimName],"*"),obj.timeDimName]);
 
 data = bcFcn(data,data(:,fidx));
 
