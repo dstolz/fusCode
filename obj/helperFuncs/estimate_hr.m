@@ -67,7 +67,7 @@ eventIdx = eventIdx(:);
 
 hr = [];
 for i = 1:length(P)
-    M = mean(P(i).Data,setdiff(1:P(i).nDims,[1 2 P(i).dim.(P(i).timeDimName)]));
+    M = mean(P(i).Data,setdiff(1:P(i).nDims,[1 2 P(i).dim.(P(i).timeDimName)]),'omitnan');
     M = squeeze(reshape(M,[prod(P(i).nYX) P(i).num.(P(i).timeDimName)]));
     M(any(isnan(M),2),:) = [];
     M = zscore(squeeze(M),0,'all');
@@ -78,8 +78,8 @@ for i = 1:length(P)
     hr = [hr; M];
 end
 
-varargout{1} = mean(hr)';
-varargout{2} = std(hr)';
+varargout{1} = mean(hr,'omitnan')';
+varargout{2} = std(hr,[],'omitnan')';
 varargout{3} = size(hr,1);
 
 
