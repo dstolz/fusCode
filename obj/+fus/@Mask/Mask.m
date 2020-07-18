@@ -103,7 +103,7 @@ classdef Mask < handle
         
         
         function create_graph(obj)
-            
+            fprintf(2,'create_graph Not yet implemented\n')
         end
         
         
@@ -115,6 +115,7 @@ classdef Mask < handle
             if nargin < 2, ax = gca; end
             h(1) = obj.Parent.image(ax);
             h(2) = obj.draw_overlay(ax);
+            if nargout == 0, clear h; end
         end
         
         
