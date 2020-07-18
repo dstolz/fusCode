@@ -75,9 +75,9 @@ A(size(S)) = struct('Data',[],'Samples',[]);
 for i = 1:length(S)
     idx = S(i).Onset + smp;
     d = nan(npx,nsmps,S(i).N,'like',data);
-    idx(idx<1|idx>npx) = nan;
+    idx(idx<1|idx>size(data,2)) = nan;
     for j = 1:S(i).N
-        d(:,~isnan(idx(j,:)),j) = data(:,idx(j,:));
+        d(:,~isnan(idx(j,:)),j) = data(:,~isnan(idx(j,:)));
     end
     A(i).Data    = d;
     A(i).Samples = idx;
