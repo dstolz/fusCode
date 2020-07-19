@@ -1,5 +1,5 @@
-function M = reconstruct_data(obj,data,fillValue)
-% M = reconstruct_data(obj,data,[fillValue])
+function M = reconstruct(obj,data,fillValue)
+% M = reconstruct(obj,data,[fillValue])
 %
 % Convenient function that reconstructs masked data in the format of
 % [M x ...], where M is the total number of pixels in a Plane and ... is any
@@ -12,6 +12,10 @@ function M = reconstruct_data(obj,data,fillValue)
 %   data      ... [M x ...] matrix as described above.
 %   fillValue ... if obj.useMask is true, then non-mask pixels are set to
 %                 this value. default = nan;
+% 
+% Complementary to plane_subset.m
+
+% DJS 2020
 
 if nargin < 3 || isempty(fillValue), fillValue = nan; end
 

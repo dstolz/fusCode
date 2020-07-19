@@ -113,7 +113,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         explorer_update(obj,roi,event,imAx)
         y = expt_design(obj,HR,stimOnOff,display)
         h = image(obj,varargin)
-         
+        M = reconstruct(obj,data,fillValue)
         
         function set_Data(obj,data,dataDims)
             % set_Data(obj,data,[dataDims])
