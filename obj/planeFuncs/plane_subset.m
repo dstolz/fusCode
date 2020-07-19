@@ -8,7 +8,7 @@ function R = plane_subset(A,ind)
 % The return matrix, R, has ndims(A)-1 dimensions, with the first dimension
 % containing all indices from the first two dimensions of A.
 % 
-% Complementary to reconstruct.m
+% Complementary to fus.Plane.reconstruct.m
 
 % DJS 2020
 
