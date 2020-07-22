@@ -209,10 +209,14 @@ V.Plane(planeId).print_log
 % Use support vector machines to try to classify events from each other. 
 % This example uses the fus.Volume.searchlight function which iterates 
 % through every valid voxel (within mask) of a volume and submits the
-% 3D block of data to some function.  Here, classify_ecoc is used to implement
-% multiclass, error-correcting output codes model using support-vector machine
-% "one-vs-all" binary learners.  classify_ecoc is a custom function that expects
-% to be called from the fus.Volume.searchlight function.
+% 3D block of data to some function.  
+% 
+% Here, classify_ecoc is used to implement multiclass, error-correcting
+% output codes model using support-vector machine "one-vs-all" binary
+% learners.  classify_ecoc is a custom function that expects to be called
+% from the fus.Volume.searchlight function. classify_ecoc ultimately calls
+% the Matlab Statistics and Machine Learning toolbox function fitcecoc.
+% See classify_ecoc, fitcecoc for details.
 %
 % The fus.Volume.searchlight function is generalized to analyze all overlapping 
 % subvolumes.  This function will optionally use the Parallel Computing Toolbox 
@@ -227,8 +231,19 @@ tmpSVM = templateSVM( ...
     'IterationLimit',1e8);
 
 f = 15; % define which frames to analyze
-par = {'foi',f,'template',tmpSVM};
+
+% these parameters are passed to classify_ecoc
+par = {'foi',f,'template',tmpSVM}; 
 
 [R,n] = V.searchlight(@classify_ecoc, ...
     'UniformOutput',true, ...
     'fncParams',par);
+
+
+
+
+
+
+
+
+
