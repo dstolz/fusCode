@@ -205,3 +205,30 @@ V.Plane(planeId).print_log
 
 
 
+%% Run searchlight classifier
+% Use support vector machines to try to classify events from each other. 
+% This example uses the fus.Volume.searchlight function which iterates 
+% through every valid voxel (within mask) of a volume and submits the
+% 3D block of data to some function.  Here, classify_ecoc is used to implement
+% multiclass, error-correcting output codes model using support-vector machine
+% "one-vs-all" binary learners.  classify_ecoc is a custom function that expects
+% to be called from the fus.Volume.searchlight function.
+%
+% The fus.Volume.searchlight function is generalized to analyze all overlapping 
+% subvolumes.  This function will optionally use the Parallel Computing Toolbox 
+% if it's available to iterate over subvolumes.
+% See help fus.Volume.searchlight for more details. 
+
+tmpSVM = templateSVM( ...
+    'KernelFunction','rbf', ...
+    'KernelScale','auto', ...
+    'Standardize',true, ...
+    'OutlierFraction',.01, ...
+    'IterationLimit',1e8);
+
+f = 15; % define which frames to analyze
+par = {'foi',f,'template',tmpSVM};
+
+[R,n] = V.searchlight(@classify_ecoc, ...
+    'UniformOutput',true, ...
+    'fncParams',par);
