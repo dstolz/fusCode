@@ -29,7 +29,8 @@ classdef Volume < handle & matlab.mixin.Copyable
         align_planes(obj,display)
         smooth(obj,gwN,gwSD)
         varargout = grid_size(obj)
-        
+%         s = slice(obj,ind)
+        [R,n] = searchlight(obj,fnc,blkSize,varargin)
         
         function obj = Volume(data,dataDims)
             % obj = Volume
@@ -168,7 +169,7 @@ classdef Volume < handle & matlab.mixin.Copyable
     methods (Static)
         function tf = check_parallel
             x=ver('parallel');
-            tf = isempty(x);
+            tf = ~isempty(x);
             if ~tf
                 fprintf(2,'Parallel Computing Toolbox not available!\n')
             end
