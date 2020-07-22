@@ -222,6 +222,9 @@ V.Plane(planeId).print_log
 % subvolumes.  This function will optionally use the Parallel Computing Toolbox 
 % if it's available to iterate over subvolumes.
 % See help fus.Volume.searchlight for more details. 
+%
+% Note that this example will take a loooong time to compute, even when
+% parallelized, on a large volume.  I'll include a quicker example soon.
 
 tmpSVM = templateSVM( ...
     'KernelFunction','rbf', ...
