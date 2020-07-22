@@ -1,4 +1,4 @@
-classdef Mask < handle
+classdef Mask < handle & matlab.mixin.SetGet & matlab.mixin.Copyable
 
     properties       
         UserData
