@@ -238,9 +238,7 @@ f = 15; % define which frames to analyze
 % these parameters are passed to classify_ecoc
 par = {'foi',f,'template',tmpSVM}; 
 
-[R,n] = V.searchlight(@classify_ecoc, ...
-    'UniformOutput',true, ...
-    'fncParams',par);
+[R,n] = V.searchlight(@classify_ecoc,'fncParams',par);
 
 
 
