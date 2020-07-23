@@ -105,7 +105,7 @@ M = reshape(M,[prod(nM(1:3)) nM(4:end)]);
 blkCenter = floor((par.blockSize+1)/2);
 
 % block vectors
-blkVec = cell2mat(arrayfun(@(a,b) -a+1:b-2,blkCenter,par.blockSize,'uni',0)');
+blkVec = arrayfun(@(a,b) -a+1:b-a,blkCenter,par.blockSize,'uni',0);
 
 
 volSize = nM(1:3);
@@ -185,9 +185,9 @@ end
 function [R,n] = iter(M,blkVec,blankVol,volSize,p,par)
 R = []; n = 0;
 
-idxy = p(1)+blkVec(1,:);
-idxx = p(2)+blkVec(2,:);
-idxz = p(3)+blkVec(3,:);
+idxy = p(1)+blkVec{1};
+idxx = p(2)+blkVec{2};
+idxz = p(3)+blkVec{3};
 
 idxy(idxy<1|idxy>volSize(1)) = [];
 idxx(idxx<1|idxx>volSize(2)) = [];
