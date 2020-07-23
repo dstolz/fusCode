@@ -15,7 +15,15 @@ function [R,n] = searchlight(obj,fnc,varargin)
 % 
 %   'Name','Value' pairs
 %    'blkSize'      ... [1x3] integers with the number of voxels included
-%                       in each block. Dimension order = [YxXxZ]. 
+%                       in each block. Dimension order = [YxXxZ]. Note that
+%                       blkSize can be non-square form.  For example,
+%                       blkSize of [3 3 1] will process a 3x3 voxel box
+%                       within individual planes.  blkSize of [1 3 5]
+%                       processes a box of voxels spanning 3 column voxels
+%                       and 5 planes and only 1 row voxel at at time.  [1 1
+%                       1] will process a single voxel at a time.  Note
+%                       that any block with a size greater than [1 1 1]
+%                       will overlap with its neighbors in all dimensions.
 %                       default = [3 3 3]
 %    'minNumVoxels' ... scalar integer indicating the minimum number of
 %                       voxels to include when calling fnc.  This handles
