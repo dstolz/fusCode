@@ -117,19 +117,20 @@ if par.useParallel && obj.check_parallel
     if isempty(gcp), parpool; end
     if par.showProgress, parfor_progress(numIter); end
     
-    C = parallel.pool.Constant(M);
-    clear M
     try
+        C = parallel.pool.Constant(M);
+        clear M
         parfor i = 1:numIter
             [R{i},n{i}] = iter(C.Value,blkVec,blankVol,volSize,[py(i),px(i),pz(i)],par)
             if par.showProgress, parfor_progress; end
         end
+        delete(C);
+
     catch me
         delete(C);
         rethrow(me);
     end
     
-    delete(C);
 else
     if par.showProgress, parfor_progress(numIter); end
     for i = 1:numIter
