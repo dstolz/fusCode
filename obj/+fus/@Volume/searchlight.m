@@ -30,11 +30,11 @@ function [R,n] = searchlight(obj,fnc,varargin)
 %               example function syntax: R = examplefnc(M,obj,params)
 % 
 %   'Name','Value' pairs
-%    'blkSize'      ... [1x3] integers with the number of voxels included
+%    'blockSize'      ... [1x3] integers with the number of voxels included
 %                       in each block. Dimension order = [YxXxZ]. Note that
-%                       blkSize can be non-square form.  For example,
-%                       blkSize of [3 3 1] will process a 3x3 voxel box
-%                       within individual planes.  blkSize of [1 3 5]
+%                       blockSize can be non-square form.  For example,
+%                       blockSize of [3 3 1] will process a 3x3 voxel box
+%                       within individual planes.  blockSize of [1 3 5]
 %                       processes a box of voxels spanning 3 column voxels
 %                       and 5 planes and only 1 row voxel at at time.  [1 1
 %                       1] will process a single voxel at a time.  Note
@@ -45,7 +45,7 @@ function [R,n] = searchlight(obj,fnc,varargin)
 %                       voxels to include when calling fnc.  This handles
 %                       edge cases so that voxels on the end planes and
 %                       other boundaries can be analyzed.  
-%                       Default = floor(prod(blkSize)/2)
+%                       Default = floor(prod(blockSize)/2)
 %    'useParallel'  ... logical value indcating whether to use the
 %                       Parallel Computing Toolbox when looping over each
 %                       voxel. default = true if toolbox is available.
@@ -63,8 +63,7 @@ function [R,n] = searchlight(obj,fnc,varargin)
 %   'n'     ... XxYxZ matrix with the number of voxels included in each
 %               block that was processed.
 % 
-
-
+% 
 % DJS 2020
 
 narginchk(2,inf);
@@ -74,8 +73,8 @@ assert(isa(fnc,'function_handle'), ...
     'fnc must be a function handle');
 
 
-par.blkSize = [3 3 3];
-par.minNumVoxels = floor(prod(par.blkSize)/2); % [3 3 3] = 27 = complete cube
+par.blockSize = [3 3 3];
+par.minNumVoxels = floor(prod(par.blockSize)/2); % [3 3 3] = 27 = complete cube
 par.useParallel = ~isempty(ver('parallel'));
 par.UniformOutput = false;
 par.fncParams = [];
@@ -103,10 +102,10 @@ nM = size(M);
 M = reshape(M,[prod(nM(1:3)) nM(4:end)]);
 
 % block center
-blkCenter = floor((par.blkSize+1)/2);
+blkCenter = floor((par.blockSize+1)/2);
 
 % block vectors
-blkVec = cell2mat(arrayfun(@(a,b) -a+1:b-2,blkCenter,par.blkSize,'uni',0)');
+blkVec = cell2mat(arrayfun(@(a,b) -a+1:b-2,blkCenter,par.blockSize,'uni',0)');
 
 
 volSize = nM(1:3);
@@ -235,10 +234,10 @@ assert(isscalar(par.minNumVoxels), ...
     'fus:Volume:searchlight:InvalidSize', ...
     'minNumVoxels must be scalar, positive integer');
 
-mustBeInteger(par.blkSize);
-mustBeNonempty(par.blkSize);
-mustBeNonnegative(par.blkSize);
-assert(numel(par.blkSize)==3, ...
+mustBeInteger(par.blockSize);
+mustBeNonempty(par.blockSize);
+mustBeNonnegative(par.blockSize);
+assert(numel(par.blockSize)==3, ...
     'fus:Volume:searchlight:InvalidSize', ...
-    'blkSize must be a 3 element, positive integer array');
+    'blockSize must be a 3 element, positive integer array');
 end
