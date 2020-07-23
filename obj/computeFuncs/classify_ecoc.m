@@ -16,7 +16,7 @@ x = x(fpick{:});
 n = size(x); % Voxels x Events x Reps
 
 % event classes
-y = ones(n(2),1)*(1:n(3));
+y = ones(n(3),1)*(1:n(2));
 y = y(:);
 
 % Voxels x Events x Reps -> Voxels x Events*Reps
