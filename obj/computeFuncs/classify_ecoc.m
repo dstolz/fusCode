@@ -1,6 +1,35 @@
-function AUC = classify_ecoc(x,vin)
-% AUC = classify_ecoc(x,...)
+function [AUC,mdl] = classify_ecoc(x,vin)
+% AUC = classify_ecoc(x,'Name',Value,...)
+% [AUC,mdl] = classify_ecoc(x,'Name',Value,...)
+%
+% Use an error-correcting output codes classifier for multiclass classification.
+% This is done using fitcecoc from the Statistics and Machine Learning toolbox. 
+% This is basically the same as running support-vector machine classifier comparing 
+% each class against all others (Coding = 'onevsall'). 
+%
+% Inputs:
+%   x   ... [MxNxP] or [MxNxPxT] matrix with:
+%               M = Predictors (Voxels)
+%               N = Events
+%               P = Repetitions of events
+%               T = Time (Frames)
+%           The classifier is fed N*P observations for M predictors for one timepoint 
+%           which is specified using the 'Name',Value pair: 'foi',frameNumber
+% 
+%  'Name',Value options:
+%       'foi'       ... frame-of-interest. A scalar value indicating which frame to use 
+%                       from the data. default = 1
+%       'Coding'    ... default = 'onevsall'. See fitcecoc documentation for more options.
+%       'KFold'     ... scalar value indicating the number of folds to use for
+%                       cross-validating the model. default = 10
+%       'Template'  ... defines a template to use for the classifier learners. 
+%                       default = 'svm'. See fitcecoc documentation for more options.
+%                       Also see templateSVM for details.
+%       
+% DJS 2020
 
+
+% defaults
 par.kfold = 10;
 par.coding = 'onevsall';
 par.template = 'svm';
@@ -32,13 +61,13 @@ if any(all(isnan(x))), return; end
 warning('off','stats:fitSVMPosterior:PerfectSeparation');
 warning('off','stats:cvpartition:KFoldMissingGrp');
 
-mdlECOC = fitcecoc(x,y,'Learners',par.template, ...
+mdl = fitcecoc(x,y,'Learners',par.template, ...
     'kfold',par.kfold,'Coding',par.coding);
 
 warning('on','stats:fitSVMPosterior:PerfectSeparation');
 warning('on','stats:cvpartition:KFoldMissingGrp');
 
-[~,score_svm] = kfoldPredict(mdlECOC); % score_svm: posterior probability of the classification
+[~,score_svm] = kfoldPredict(mdl); % score_svm: posterior probability of the classification
 
 for j = 1:size(score_svm,2)
     [~,~,~,AUC(j)] = perfcurve(y,score_svm(:,j),j);
