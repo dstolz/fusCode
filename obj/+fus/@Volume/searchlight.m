@@ -118,43 +118,66 @@ blankVol = false(volSize);
 
 numIter = prod(volSize);
 
-% preallocate result output as cell for uncertain output format from
-% anonymous function call and for compatibility with parfor slicing
-R = cell(volSize);
-n = cell(volSize); % convert to numeric matrix afterwards
-
 fprintf('Running %s on volume "%s", %d Planes with %d voxels\n', ...
     func2str(fnc),obj.Name,obj.nPlanes,numIter)
 
 startTime = tic;
 
 if par.useParallel && obj.check_parallel
-    if isempty(gcp), parpool; end
-    if par.showProgress, parfor_progress(numIter); end
-    
-    try
-        C = parallel.pool.Constant(M);
-        clear M
-        parfor i = 1:numIter
-            [R{i},n{i}] = iter(C.Value,blkVec,blankVol,volSize,[py(i),px(i),pz(i)],par)
-            if par.showProgress, parfor_progress; end
-        end
-        delete(C);
+    p = gcp;
 
+    if isempty(p), p = gcp; end
+    
+    update_par_progress; % init
+    
+    Q = parallel.pool.DataQueue;
+    afterEach(Q,@(cnt) update_par_progress(numIter,cnt));
+
+    try
+        fprintf('Distributing volume data to workers ...')
+        Cx = parallel.pool.Constant(M);
+        clear M
+        Px = parallel.pool.Constant({py,px,pz});
+        clear py px pz
+        fprintf(' done\n')
+
+        step = floor(numIter/(4*p.NumWorkers));
+        partitions = [1:step:numIter, numIter+1];
+        f(1:numel(partitions)-1) = parallel.FevalFuture;
+        for i = 1:numel(partitions)-1
+            f(i) = parfeval(p,@iter_parallel,2,Q,partitions(i),partitions(i+1),Cx,blkVec,blankVol,volSize,Px,par);
+        end
+        
+        wait(f);
+        
+        [R,n] = fetchOutputs(f);
+        
+        R = reshape(R,volSize);
+        n = reshape(n,volSize);
+        
+        cancel(f);
+
+        delete(Cx);
+        delete(Px);
     catch me
-        delete(C);
+        cancel(f);
+        delete(Cx);
+        delete(Px);
         rethrow(me);
     end
     
 else
     if par.showProgress, parfor_progress(numIter); end
+    R = cell(volSize);
+    n = zeros(volSize,'single');
     for i = 1:numIter
-        [R{i},n{i}] = iter(M,blkVec,blankVol,volSize,[py(i),px(i),pz(i)],par);
+        [R{i},n(i)] = iter(M,blkVec,blankVol,volSize,[py(i),px(i),pz(i)],par);
         if par.showProgress, parfor_progress; end
     end
+    if par.showProgress, parfor_progress(0); end
+
 end
 
-n = cell2mat(n);
 
 if par.UniformOutput
     try
@@ -165,7 +188,6 @@ if par.UniformOutput
     end
 end
 
-if par.showProgress, parfor_progress(0); end
 
 
 t = toc(startTime);
@@ -203,7 +225,8 @@ if nPx < par.minNumVoxels
 end
 
 % slice data
-s = repmat({':'},1,ndims(M));
+ndM = ndims(M);
+s = repmat({':'},1,ndM);
 s{1} = ind;
 
 n = nnz(ind);
@@ -212,6 +235,53 @@ R = feval(par.fnc,M(s{:}),par.fncParams);
 
 end
 
+function [R,n] = iter_parallel(Q,first,last,M,blkVec,blankVol,volSize,p,par)
+R = cell(last-first,1);
+n = zeros(last-first,1,'uint16');
+ndM = ndims(M.Value);
+s = repmat({':'},1,ndM);
+for i = first:last-1    
+    idxy = p.Value{1}(i)+blkVec{1};
+    idxx = p.Value{2}(i)+blkVec{2};
+    idxz = p.Value{3}(i)+blkVec{3};
+    
+    idxy(idxy<1|idxy>volSize(1)) = [];
+    idxx(idxx<1|idxx>volSize(2)) = [];
+    idxz(idxz<1|idxz>volSize(3)) = [];
+    
+    ind = blankVol;
+    ind(idxy,idxx,idxz) = true;
+    
+    nPx = sum(ind(:));
+    if nPx < par.minNumVoxels
+        send(Q,first+i-1);
+        continue
+    end
+    
+    s{1} = ind;
+    
+    k = i-first+1;
+    
+    n(k) = nnz(ind);
+    
+    R{k} = feval(par.fnc,M.Value(s{:}),par.fncParams);
+    send(Q,first+i-1);
+end
+end
+
+
+function update_par_progress(n,cnt)
+persistent t
+if nargin == 0, t = 0; end
+
+t = t + 1;
+
+if mod(t,100)~=0, return; end
+
+v =t/n*100;
+
+fprintf('completed % 3.2f %%\n',v)
+end
 
 
 
@@ -242,7 +312,11 @@ assert(numel(par.blockSize)==3, ...
     'fus:Volume:searchlight:InvalidSize', ...
     'blockSize must be a 3 element, positive integer array');
 
-assert(all(mod(par.blockSize,2)), ...
-    'fus:Volume:searchlight:InvalidValue', ...
-    'blockSize values must all be odd');
+% assert(all(mod(par.blockSize,2)), ...
+%     'fus:Volume:searchlight:InvalidValue', ...
+%     'blockSize values must all be odd');
 end
+
+
+
+
