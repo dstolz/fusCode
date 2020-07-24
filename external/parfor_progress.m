@@ -51,7 +51,7 @@ if N > 0
     fclose(f);
 
     if nargout == 0
-        disp(['  0%[>', repmat(' ', 1, w), ']']);
+        disp([' 0.00%[>', repmat(' ', 1, w), ']']);
     end
 elseif N == 0
     delete('parfor_progress.txt');
@@ -75,7 +75,7 @@ else
     percent = (length(progress)-1)/progress(1)*100;
 
     if nargout == 0
-        perc = sprintf('%3.0f%%', percent); % 4 characters wide, percentage
-        disp([repmat(char(8), 1, (w+9)), char(10), perc, '[', repmat('=', 1, round(percent*w/100)), '>', repmat(' ', 1, w - round(percent*w/100)), ']']);
+        perc = sprintf('% 3.2f%%', percent); % 4 characters wide, percentage
+        disp([repmat(char(8), 1, (w+11)), char(10), perc, '[', repmat('=', 1, round(percent*w/100)), '>', repmat(' ', 1, w - round(percent*w/100)), ']']);
     end
 end
