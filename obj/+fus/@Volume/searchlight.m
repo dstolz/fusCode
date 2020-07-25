@@ -118,7 +118,7 @@ blankVol = false(volSize);
 
 numIter = prod(volSize);
 
-fprintf('Running %s on volume "%s", %d Planes with %d voxels\n', ...
+fprintf('Running %s on volume "%s", %d Planes with approximately %d voxels\n', ...
     func2str(fnc),obj.Name,obj.nPlanes,numIter)
 
 startTime = tic;
@@ -141,22 +141,30 @@ if par.useParallel && obj.check_parallel
         clear py px pz
         fprintf(' done\n')
 
-        step = floor(numIter/(4*p.NumWorkers));
-        partitions = [1:step:numIter, numIter+1];
-        f(1:numel(partitions)-1) = parallel.FevalFuture;
-        for i = 1:numel(partitions)-1
-            f(i) = parfeval(p,@iter_parallel,2,Q,partitions(i),partitions(i+1),Cx,blkVec,blankVol,volSize,Px,par);
+        
+        
+        fprintf('Submitting jobs to %d workers ...\n',p.NumWorkers)
+        f(1:p.NumWorkers) = parallel.FevalFuture;
+        for i = 1:p.NumWorkers
+            % stratify voxels across workers to try to balance it
+            idx = i:p.NumWorkers:numIter;
+            f(i) = parfeval(p,@iter_parallel,2,Q,idx,Cx,blkVec,blankVol,volSize,Px,par);
+%             f(i) = parfeval(p,@iter_parallel,2,Q,partitions(i),partitions(i+1),Cx,blkVec,blankVol,volSize,Px,par);
         end
         
         wait(f);
         
-        [R,n] = fetchOutputs(f);
+        R = cell(volSize);
+        n = zeros(volSize);
+        for i = 1:p.NumWorkers
+            idx = i:p.NumWorkers:numIter;
+            [R(idx),n(idx)] = fetchOutputs(f(i));
+        end
         
-        R = reshape(R,volSize);
-        n = reshape(n,volSize);
+%         R = reshape(R,volSize);
+%         n = reshape(n,volSize);
         
         cancel(f);
-
         delete(Cx);
         delete(Px);
     catch me
@@ -191,17 +199,17 @@ end
 
 
 t = toc(startTime);
-if t > 21600
+if t > 3600
     t = t / 360;
     u = 'hr';
-elseif t > 3600
-    t = t /60;
+elseif t > 60
+    t = t / 60;
     u = 'm';
 else
     u = 's';
 end
 
-fprintf('Completed in %.2f %s\n',t,u)
+fprintf('completed 100%% in %.2f %s\n',t,u)
 end
 
 function [R,n] = iter(M,blkVec,blankVol,volSize,p,par)
@@ -235,12 +243,15 @@ R = feval(par.fnc,M(s{:}),par.fncParams);
 
 end
 
-function [R,n] = iter_parallel(Q,first,last,M,blkVec,blankVol,volSize,p,par)
-R = cell(last-first,1);
-n = zeros(last-first,1,'uint16');
+% function [R,n] = iter_parallel(Q,first,last,M,blkVec,blankVol,volSize,p,par)
+function [R,n] = iter_parallel(Q,idx,M,blkVec,blankVol,volSize,p,par)
+nidx = length(idx);
+R = cell(nidx,1);
+n = zeros(nidx,1,'uint16');
 ndM = ndims(M.Value);
 s = repmat({':'},1,ndM);
-for i = first:last-1    
+k = 1;
+for i = idx
     idxy = p.Value{1}(i)+blkVec{1};
     idxx = p.Value{2}(i)+blkVec{2};
     idxz = p.Value{3}(i)+blkVec{3};
@@ -260,12 +271,11 @@ for i = first:last-1
     
     s{1} = ind;
     
-    k = i-first+1;
-    
     n(k) = nnz(ind);
     
     R{k} = feval(par.fnc,M.Value(s{:}),par.fncParams);
-    send(Q,first+i-1);
+    send(Q,k);
+    k = k + 1;
 end
 end
 
@@ -280,7 +290,7 @@ if mod(t,100)~=0, return; end
 
 v =t/n*100;
 
-fprintf('completed % 3.2f %%\n',v)
+fprintf('%s: completed % 3.2f%%\n',datestr(now),v)
 end
 
 
