@@ -70,7 +70,7 @@ classdef Volume < handle & matlab.mixin.Copyable
                     fprintf('Adding Plane % d to Volume "%s" ...',i,obj.Name)
                     idx(:) = {':'};
                     idx{pidx} = i;
-                    obj.Plane(end+1) = fus.Plane(obj,data(idx{:}),dataDims,obj.nPlanes+1,Fs);
+                    obj.Plane(end+1) = fus.Plane(obj,squeeze(data(idx{:})),dataDims,obj.nPlanes+1,Fs);
                     fprintf(' done\n')
                 end
             end
