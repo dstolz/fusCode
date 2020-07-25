@@ -131,7 +131,7 @@ if par.useParallel && obj.check_parallel
     update_par_progress; % init
     
     Q = parallel.pool.DataQueue;
-    afterEach(Q,@update_par_progress(numIter));
+    afterEach(Q,@(idx) update_par_progress(numIter,idx));
 
     try
         fprintf('Distributing volume data to workers ...')
@@ -275,13 +275,13 @@ end
 end
 
 
-function update_par_progress(n)
+function update_par_progress(n,idx)
 persistent t
 if nargin == 0, t = 0; end
 
-if nargin > 0
-    fprintf(repmat('\b',1,39))
-end
+% if nargin > 0
+%     fprintf(repmat('\b',1,39))
+% end
 
 t = t + 1;
 
@@ -289,7 +289,7 @@ if mod(t,100)~=0, return; end
 
 v=t/n*100;
 
-fprintf('%s: completed % 3.2f%%',datestr(now),v)
+fprintf('%s: completed % 3.2f%%\n',datestr(now),v)
 end
 
 
