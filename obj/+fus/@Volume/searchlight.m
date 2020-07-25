@@ -149,7 +149,6 @@ if par.useParallel && obj.check_parallel
             % stratify voxels across workers to try to balance it
             idx = i:p.NumWorkers:numIter;
             f(i) = parfeval(p,@iter_parallel,2,Q,idx,Cx,blkVec,blankVol,volSize,Px,par);
-%             f(i) = parfeval(p,@iter_parallel,2,Q,partitions(i),partitions(i+1),Cx,blkVec,blankVol,volSize,Px,par);
         end
         
         wait(f);
@@ -160,9 +159,6 @@ if par.useParallel && obj.check_parallel
             idx = i:p.NumWorkers:numIter;
             [R(idx),n(idx)] = fetchOutputs(f(i));
         end
-        
-%         R = reshape(R,volSize);
-%         n = reshape(n,volSize);
         
         cancel(f);
         delete(Cx);
