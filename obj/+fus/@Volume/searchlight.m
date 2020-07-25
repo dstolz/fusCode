@@ -159,7 +159,7 @@ if par.useParallel && obj.check_parallel
             idx = i:p.NumWorkers:numIter;
             [R(idx),n(idx)] = fetchOutputs(f(i));
         end
-        
+
         cancel(f);
         delete(Cx);
         delete(Px);
@@ -239,7 +239,6 @@ R = feval(par.fnc,M(s{:}),par.fncParams);
 
 end
 
-% function [R,n] = iter_parallel(Q,first,last,M,blkVec,blankVol,volSize,p,par)
 function [R,n] = iter_parallel(Q,idx,M,blkVec,blankVol,volSize,p,par)
 nidx = length(idx);
 R = cell(nidx,1);
