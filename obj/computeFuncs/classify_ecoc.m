@@ -41,20 +41,26 @@ function [R,mdl] = classify_ecoc(x,vin)
 % defaults
 par.kfold = 10;
 par.coding = 'onevsall';
-par.template = 'svm';
+par.template = templateSVM;
 par.result = 'auc';
-par.weights = 'uniform';
+par.weights = 'uniform';   % not yet documented
+par.averageFrames = false; % not yet documented
 par.foi = 1;
 
 par = validate_inputs(par,vin);
 
-% Voxels x Events x Reps x Time -> Voxels x Events x Reps*Time
+% Voxels x Events x Reps x Time
 fpick = repmat({':'},1,ndims(x));
 fpick{ndims(x)} = par.foi;
 x = x(fpick{:});
 n = size(x,1:4);
-x = reshape(x,[n(1) n(2) n(3)*n(4)]);
-
+if par.averageFrames
+    % -> Voxels x Events x Reps(mean(Time))
+    x = mean(x,4,'omitnan');
+else
+    % -> Voxels x Events x Reps*Time
+    x = reshape(x,[n(1) n(2) n(3)*n(4)]);
+end
 
 n = size(x,1:3); % Voxels x Events x Reps
 
