@@ -43,6 +43,7 @@ par.kfold = 10;
 par.coding = 'onevsall';
 par.template = 'svm';
 par.result = 'auc';
+par.weights = 'uniform';
 par.foi = 1;
 
 par = validate_inputs(par,vin);
@@ -67,6 +68,17 @@ x = reshape(x,[n(1) n(2)*n(3)]);
 x = x'; % -> Events*Reps x Voxels | Observations x Predictors(Features)
 
 
+if isa(par.weights,'function_handle')
+    w = feval(par.weights,n);
+else
+    switch par.weights
+        case 'uniform'
+            w = ones(n(2)*n(3),1);
+
+        case {'gaussian','uniform'}
+            w = repmat(gausswin(n(2)),n(3),1);
+    end
+end
 
 % preallocate result
 switch lower(par.result)
@@ -74,6 +86,8 @@ switch lower(par.result)
         R = nan(1,n(2));
     case 'scores'
         R = nan;
+    case 'model'
+        
     case 'posteriors'
         error('posteriors result is not yet implemented')
         
@@ -84,25 +98,32 @@ end
 if any(all(isnan(x))), return; end
 
 
-
 warning('off','stats:fitSVMPosterior:PerfectSeparation');
 warning('off','stats:cvpartition:KFoldMissingGrp');
 
 mdl = fitcecoc(x,y,'Learners',par.template, ...
-    'kfold',par.kfold,'Coding',par.coding);
+    'kfold',par.kfold,'Coding',par.coding, ...
+    'Weights',w);
 
 warning('on','stats:fitSVMPosterior:PerfectSeparation');
 warning('on','stats:cvpartition:KFoldMissingGrp');
 
-[~,score_svm] = kfoldPredict(mdl); % score_svm: posterior probability of the classification
 
 switch lower(par.result)
     case 'auc'
+        [~,score_svm] = kfoldPredict(mdl); % score_svm: posterior probability of the classification
+
         for j = 1:size(score_svm,2)
             [~,~,~,R(j)] = perfcurve(y,score_svm(:,j),j);
         end
     case 'scores'
+        [~,score_svm] = kfoldPredict(mdl); % score_svm: posterior probability of the classification
+
         R = score_svm;
+
+    case 'model'
+        R = mdl;
+
     case 'posteriors'
         error('posteriors result is not yet implemented')
         
@@ -121,7 +142,15 @@ for i = 1:2:length(vin)
     par.(fn{ind}) = vin{i+1};
 end
 
-mustBeMember(par.result,{'auc','scores','posteriors'})
+mustBeMember(par.result,{'auc','scores','posteriors','model'})
+
+if isstring(par.weights) || ischar(par.weights)
+    mustBeMember(par.weights,{'uniform','gaussian','normal'})
+else
+    assert(isa(par.weights,'function_handle'), ...
+        'fus:Volume:searchlight:InvalidValue', ...
+        'weights must be followed by a string or function handle.')
+end
 
 mustBeInteger(par.foi);
 mustBeNonempty(par.foi);
