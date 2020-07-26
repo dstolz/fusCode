@@ -20,6 +20,7 @@ classdef Volume < handle & matlab.mixin.Copyable
     end
     
     properties (Dependent)
+        nYXP
         nPlanes
         nFrames
         Time
@@ -130,6 +131,10 @@ classdef Volume < handle & matlab.mixin.Copyable
     
     
     methods % set/get
+        function n = get.nYXP(obj)
+            n = [obj.Plane(1).nYX obj.nPlanes];
+        end
+        
         function n = get.nPlanes(obj)
             n = length(obj.Plane);
         end
