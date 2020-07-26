@@ -260,7 +260,7 @@ for i = idx
     
     nPx = sum(ind(:));
     if nPx < par.minNumVoxels
-        send(Q,first+i-1);
+        send(Q,i);
         continue
     end
     
@@ -269,7 +269,7 @@ for i = idx
     n(k) = nnz(ind);
     
     R{k} = feval(par.fnc,M.Value(s{:}),par.fncParams);
-    send(Q,k);
+    send(Q,i);
     k = k + 1;
 end
 end
