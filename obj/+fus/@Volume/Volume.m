@@ -23,6 +23,9 @@ classdef Volume < handle & matlab.mixin.Copyable
         nYXP
         nPlanes
         nFrames
+        nDims
+        volDimSizes
+        volDimOrder
         Time
     end
     
@@ -30,7 +33,8 @@ classdef Volume < handle & matlab.mixin.Copyable
         align_planes(obj,display)
         smooth(obj,gwN,gwSD)
         varargout = grid_size(obj)
-%         s = slice(obj,ind)
+        v = get_volume_data(obj)
+        [s,origIdx,dimOrder] = slice(obj,ind)
         [R,n] = searchlight(obj,fnc,blkSize,varargin)
         
         function obj = Volume(data,dataDims)
@@ -131,6 +135,20 @@ classdef Volume < handle & matlab.mixin.Copyable
     
     
     methods % set/get
+        function n = get.nDims(obj)
+            n = obj.Plane(1).nDims+1;
+        end
+        
+        function d = get.volDimSizes(obj)
+            d = [obj.nYXP obj.Plane(1).dimSizes(3:end)];
+        end
+        
+        
+        function s = get.volDimOrder(obj)
+            s = [{'Y' 'X' 'Planes'} obj.Plane(1).dimOrder(3:end)];
+        end
+        
+        
         function n = get.nYXP(obj)
             n = [obj.Plane(1).nYX obj.nPlanes];
         end
