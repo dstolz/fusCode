@@ -3,9 +3,9 @@ function [R,n] = searchlight(obj,fnc,varargin)
 %
 % Evaluates a function, fnc, for all subvolumes in the fus.Volume object.
 % The specified function, fnc, is passed a data matrix with dimensions of
-% Voxels x additional dims..., and additional varargin using the 
+% Voxels x additional dims..., and additional varargin using the
 % cell array specified using the 'fncVarargin' property (see below).
-% 
+%
 % Example (where V is a valid fus.Volume object with multiple Planes):
 %   % specify parameters, par, that are passed to classify_ecoc
 %   tmpSVM = templateSVM( ...
@@ -16,19 +16,19 @@ function [R,n] = searchlight(obj,fnc,varargin)
 %        'IterationLimit',1e8);
 %
 %   par = {'foi',15,'template',tmpSVM};
-% 
+%
 %   R = V.searchlight(@classify_ecoc, ...
 %        'blockSize',[5 5 5], ...
 %        'useParallel',true, ...
 %        'fncParams',par);
-% 
+%
 % Inputs:
 %   obj     ... fus.Volume object handle
 %   fnc     ... function handle.  The called function receives the object
 %               handle, followed by the volume data on each iteration.
 %
 %               example function syntax: R = examplefnc(M,obj,params)
-% 
+%
 %   'Name','Value' pairs
 %    'blockSize'      ... [1x3] integers with the number of voxels included
 %                       in each block. Dimension order = [YxXxZ]. Note that
@@ -44,7 +44,7 @@ function [R,n] = searchlight(obj,fnc,varargin)
 %    'minNumVoxels' ... scalar integer indicating the minimum number of
 %                       voxels to include when calling fnc.  This handles
 %                       edge cases so that voxels on the end planes and
-%                       other boundaries can be analyzed.  
+%                       other boundaries can be analyzed.
 %                       Default = floor(prod(blockSize)/2)
 %    'useParallel'  ... logical value indcating whether to use the
 %                       Parallel Computing Toolbox when looping over each
@@ -62,8 +62,8 @@ function [R,n] = searchlight(obj,fnc,varargin)
 %               each valid block.
 %   'n'     ... XxYxZ matrix with the number of voxels included in each
 %               block that was processed.
-% 
-% 
+%
+%
 % DJS 2020
 
 narginchk(2,inf);
@@ -84,17 +84,9 @@ par = validate_inputs(par,varargin);
 
 par.fnc = fnc;
 
+volSize = obj.nYXP;
 
-M = [];
-for i = 1:obj.nPlanes
-    M = cat(obj.Plane(i).nDims+1,M,obj.Plane(i).Data);
-end
-
-P = obj.Plane(1);
-
-% permute to Y x X x Plane x additional dims...
-d = setdiff(P.dimOrder,{'Y' 'X'});
-M = permute(M,[P.dim.Y P.dim.X P.nDims+1 P.find_dim(d)]);
+M = obj.get_volume_data;
 
 nM = size(M);
 
@@ -107,16 +99,12 @@ blkCenter = floor((par.blockSize+1)/2);
 % block vectors
 blkVec = arrayfun(@(a,b) -a+1:b-a,blkCenter,par.blockSize,'uni',0);
 
-
-volSize = nM(1:3);
-
 % create a blank volume to assist in indexing
 blankVol = false(volSize);
 
-% predetermine all voxel coordinates (primarily for using parfor)
-[py,px,pz] = ind2sub(volSize,1:prod(volSize));
-
 numIter = prod(volSize);
+
+
 
 fprintf('Running %s on volume "%s", %d Planes with approximately %d voxels\n', ...
     func2str(fnc),obj.Name,obj.nPlanes,numIter)
@@ -125,30 +113,21 @@ startTime = tic;
 
 if par.useParallel && obj.check_parallel
     p = gcp;
-
+    
     if isempty(p), p = gcp; end
     
     update_par_progress; % init
     
     Q = parallel.pool.DataQueue;
     afterEach(Q,@(idx) update_par_progress(numIter,idx));
-
+    
     try
-        fprintf('Distributing volume data to workers ...')
-        Cx = parallel.pool.Constant(M);
-        clear M
-        Px = parallel.pool.Constant({py,px,pz});
-        clear py px pz
-        fprintf(' done\n')
-
-        
-        
         fprintf('Submitting jobs to %d workers ...\n',p.NumWorkers)
         f(1:p.NumWorkers) = parallel.FevalFuture;
         for i = 1:p.NumWorkers
             % stratify voxels across workers to try to balance it
             idx = i:p.NumWorkers:numIter;
-            f(i) = parfeval(p,@iter_parallel,2,Q,idx,Cx,blkVec,blankVol,volSize,Px,par);
+            f(i) = parfeval(p,@iter_parallel,2,Q,idx,M,blkVec,blankVol,volSize,par);
         end
         
         wait(f);
@@ -159,14 +138,10 @@ if par.useParallel && obj.check_parallel
             idx = i:p.NumWorkers:numIter;
             [R(idx),n(idx)] = fetchOutputs(f(i));
         end
-
+        
         cancel(f);
-        delete(Cx);
-        delete(Px);
     catch me
         cancel(f);
-        delete(Cx);
-        delete(Px);
         rethrow(me);
     end
     
@@ -175,11 +150,11 @@ else
     R = cell(volSize);
     n = zeros(volSize,'single');
     for i = 1:numIter
-        [R{i},n(i)] = iter(M,blkVec,blankVol,volSize,[py(i),px(i),pz(i)],par);
+        [R{i},n(i)] = iter(M,blkVec,blankVol,volSize,i,par);
         if par.showProgress, parfor_progress; end
     end
     if par.showProgress, parfor_progress(0); end
-
+    
 end
 
 
@@ -208,12 +183,13 @@ end
 fprintf('completed 100%% in %.2f %s\n',t,u)
 end
 
-function [R,n] = iter(M,blkVec,blankVol,volSize,p,par)
+function [R,n] = iter(M,blkVec,blankVol,volSize,i,par)
 R = []; n = 0;
 
-idxy = p(1)+blkVec{1};
-idxx = p(2)+blkVec{2};
-idxz = p(3)+blkVec{3};
+[y,x,z] = ind2sub(volSize,i);
+idxy = y+blkVec{1};
+idxx = x+blkVec{2};
+idxz = z+blkVec{3};
 
 idxy(idxy<1|idxy>volSize(1)) = [];
 idxx(idxx<1|idxx>volSize(2)) = [];
@@ -231,45 +207,46 @@ end
 % slice data
 ndM = ndims(M);
 s = repmat({':'},1,ndM);
-s{1} = ind;
+s{1} = ind(:);
 
 n = nnz(ind);
 
 R = feval(par.fnc,M(s{:}),par.fncParams);
-
 end
 
-function [R,n] = iter_parallel(Q,idx,M,blkVec,blankVol,volSize,p,par)
+function [R,n] = iter_parallel(Q,idx,M,blkVec,blankVol,volSize,par)
 nidx = length(idx);
 R = cell(nidx,1);
 n = zeros(nidx,1,'uint16');
-ndM = ndims(M.Value);
-s = repmat({':'},1,ndM);
+s = repmat({':'},1,ndims(M));
 k = 1;
-for i = idx
-    idxy = p.Value{1}(i)+blkVec{1};
-    idxx = p.Value{2}(i)+blkVec{2};
-    idxz = p.Value{3}(i)+blkVec{3};
+for i = 1:nidx
+    [y,x,z] = ind2sub(volSize,idx(i));
+    idxy = y+blkVec{1};
+    idxx = x+blkVec{2};
+    idxz = z+blkVec{3};
     
     idxy(idxy<1|idxy>volSize(1)) = [];
     idxx(idxx<1|idxx>volSize(2)) = [];
     idxz(idxz<1|idxz>volSize(3)) = [];
+    
     
     ind = blankVol;
     ind(idxy,idxx,idxz) = true;
     
     nPx = sum(ind(:));
     if nPx < par.minNumVoxels
-        send(Q,i);
+        send(Q,idx(i));
+        k = k + 1;
         continue
     end
     
-    s{1} = ind;
-    
     n(k) = nnz(ind);
     
-    R{k} = feval(par.fnc,M.Value(s{:}),par.fncParams);
-    send(Q,i);
+    s{1} = ind;
+    
+    R{k} = feval(par.fnc,M(s{:}),par.fncParams);
+    send(Q,idx(i));
     k = k + 1;
 end
 end
