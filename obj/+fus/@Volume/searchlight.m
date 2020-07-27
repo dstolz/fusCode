@@ -93,11 +93,13 @@ nM = size(M);
 % Y x X x Plane x ... -> AllVoxels x ...
 M = reshape(M,[prod(nM(1:3)) nM(4:end)]);
 
-% block center
-blkCenter = floor((par.blockSize+1)/2);
 
-% block vectors
-blkVec = arrayfun(@(a,b) -a+1:b-a,blkCenter,par.blockSize,'uni',0);
+if all(par.blockSize==1)
+    blkVec = {0 0 0}; % block vectors
+else
+    blkCenter = floor((par.blockSize+1)/2); % block center
+    blkVec = arrayfun(@(a,b) -a+1:b-a,blkCenter,par.blockSize,'uni',0); % block vectors
+end
 
 % create a blank volume to assist in indexing
 blankVol = false(volSize);
@@ -298,9 +300,9 @@ assert(numel(par.blockSize)==3, ...
     'fus:Volume:searchlight:InvalidSize', ...
     'blockSize must be a 3 element, positive integer array');
 
-% assert(all(mod(par.blockSize,2)), ...
-%     'fus:Volume:searchlight:InvalidValue', ...
-%     'blockSize values must all be odd');
+assert(par.minNumVoxels < prod(par.blockSize), ...
+    'fus:Volume:searchlight:ValueOutOfRange', ...
+    'minNumVoxels must be less than the prod(blockSize)');
 end
 
 
