@@ -26,6 +26,12 @@ function [R,mdl] = classify_ecoc(x,vin)
 %       'Template'  ... defines a template to use for the classifier learners.
 %                       default = 'svm'. See fitcecoc documentation for more options.
 %                       Also see templateSVM for details.
+%       'averageFrames' ... Determines if values from multiple frames
+%                           should be averaged. This option only applies if
+%                           more than one frame of interest (foi) is
+%                           specified. If false, then each frame specified
+%                           in foi is used as an additional 'observation'.
+%                           Default = false
 %
 % Outputs:
 %   AUC     ... [1xQ], where Q is number of comparisons. Area under the receiver
@@ -44,7 +50,7 @@ par.coding = 'onevsall';
 par.template = templateSVM;
 par.result = 'auc';
 par.weights = 'uniform';   % not yet documented
-par.averageFrames = false; % not yet documented
+par.averageFrames = false;
 par.foi = 1;
 
 par = validate_inputs(par,vin);
