@@ -21,8 +21,11 @@ function [R,mdl] = classify_ecoc(x,vin)
 %       'foi'       ... frame-of-interest. A 1xN value indicating which frame(s) to use
 %                       from the data. Appends multiple frames as observations. default = 1
 %       'Coding'    ... default = 'onevsall'. See fitcecoc documentation for more options.
+%       'Crossval'  ... determines which cross-validation technique is
+%                       used. Can be either 'kfold' or 'leaveout'. default = 'kfold'
 %       'KFold'     ... scalar value indicating the number of folds to use for
-%                       cross-validating the model. default = 10
+%                       cross-validating the model. Only used if 'Crossval'
+%                       is 'kfold'. default = 10
 %       'Template'  ... defines a template to use for the classifier learners.
 %                       default = 'svm'. See fitcecoc documentation for more options.
 %                       Also see templateSVM for details.
@@ -49,6 +52,7 @@ par.kfold = 10;
 par.coding = 'onevsall';
 par.template = templateSVM;
 par.result = 'auc';
+par.crossval = 'kfold';
 par.weights = 'uniform';   % not yet documented
 par.averageFrames = false;
 par.foi = 1;
@@ -86,8 +90,8 @@ else
     switch par.weights
         case 'uniform'
             w = ones(n(2)*n(3),1);
-
-        case {'gaussian','uniform'}
+            
+        case {'gaussian','normal'}
             w = repmat(gausswin(n(2)),n(3),1);
     end
 end
@@ -113,10 +117,16 @@ if any(all(isnan(x))), return; end
 warning('off','stats:fitSVMPosterior:PerfectSeparation');
 warning('off','stats:cvpartition:KFoldMissingGrp');
 
-mdl = fitcecoc(x,y,'Learners',par.template, ...
-    'kfold',par.kfold,'Coding',par.coding, ...
-    'Weights',w);
-
+switch lower(par.crossval)
+    case 'leaveout'
+        mdl = fitcecoc(x,y,'Learners',par.template, ...
+            'Leaveout','on','Coding',par.coding, ...
+            'Weights',w);
+    case 'kfold'
+        mdl = fitcecoc(x,y,'Learners',par.template, ...
+            'kfold',par.kfold,'Coding',par.coding, ...
+            'Weights',w);
+end
 warning('on','stats:fitSVMPosterior:PerfectSeparation');
 warning('on','stats:cvpartition:KFoldMissingGrp');
 
@@ -124,18 +134,18 @@ warning('on','stats:cvpartition:KFoldMissingGrp');
 switch lower(par.result)
     case 'auc'
         [~,score_svm] = kfoldPredict(mdl); % score_svm: posterior probability of the classification
-
+        
         for j = 1:size(score_svm,2)
             [~,~,~,R(j)] = perfcurve(y,score_svm(:,j),j);
         end
     case 'scores'
         [~,score_svm] = kfoldPredict(mdl); % score_svm: posterior probability of the classification
-
+        
         R = score_svm;
-
+        
     case 'model'
         R = mdl;
-
+        
     case 'posteriors'
         error('posteriors result is not yet implemented')
         
@@ -155,6 +165,7 @@ for i = 1:2:length(vin)
 end
 
 mustBeMember(par.result,{'auc','scores','posteriors','model'})
+mustBeMember(par.crossval,{'kfold','leaveout'});
 
 if isstring(par.weights) || ischar(par.weights)
     mustBeMember(par.weights,{'uniform','gaussian','normal'})
@@ -163,6 +174,8 @@ else
         'fus:Volume:searchlight:InvalidValue', ...
         'weights must be followed by a string or function handle.')
 end
+
+
 
 mustBeInteger(par.foi);
 mustBeNonempty(par.foi);
