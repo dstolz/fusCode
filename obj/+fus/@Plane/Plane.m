@@ -174,7 +174,27 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         
         
         function data = reshape_data(obj,newShape)
-            % data = reshape_data(obj,newShape)            
+            % data = reshape_data(obj,newShape)
+            %
+            % Returns data reshaped using the name of dimensions in the
+            % data.  Use an asterisk, *, to combine two or more dimensions.
+            % See examples below.
+            %
+            % Note that the Plane's data is not updated. Use the set_Data
+            % function to update the Plane's data.
+            %
+            % ex:
+            %   % Return data with all voxels in the first dim,
+            %   % additional dimensions in the second dim, and time in the
+            %   % third dim.  Note that obj.timeDimName is used here to
+            %   % permit different naming schemes by the user.
+            %   data = obj.reshape_data({'X*Y','',obj.timeDimName});
+            %   
+            %
+            % ex: 
+            %   % Return data with all dims compressed into first dimension
+            %   % and time in the second dimension.
+            %   data = obj.reshape_data({'',obj.timeDimName});
             
             try
                 rind = cellfun(@isempty,newShape); % '' == remaining dims
@@ -305,6 +325,12 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
                 ev = obj.Event(ind);
             end
         end
+        
+        
+        function detrend(obj,varargin)
+            d = obj.reshape_data({'',obj.timeDimName});
+        end
+        
         
     end % methods (Public); functions
     
