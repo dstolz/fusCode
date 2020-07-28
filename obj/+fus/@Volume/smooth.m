@@ -14,7 +14,7 @@ end
 P = obj.Plane; % handles
 
 % data -> {Plane} [Y x X x AllOtherDims]
-X = arrayfun(@(a) a.reshape_data({'Y' 'X' []}),P,'uni',0);
+X = arrayfun(@(a) a.reshape_data({'Y' 'X' ''}),P,'uni',0);
 
 
 % data -> [Y x X x Plane x AllOtherDims]
