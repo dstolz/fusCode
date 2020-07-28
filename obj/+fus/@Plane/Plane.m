@@ -234,10 +234,22 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             if nargout == 0, clear newNum; end
         end
         
-        function permute_data(obj,newDimOrder)
+        function oldDimOrder = permute_data(obj,newDimOrder)
             % permute_data(obj,newDimOrder)
+            %
+            % Applies dimensional permutation to the data.
+            % 
+            % Input:
+            %   obj         ... Plane object.
+            %   newDimOrder ... [1xnDims] new dim order. Can be specified
+            %                   as either a numeric vector or a cell/string
+            %                   array of dim names in the new order.
+            %
+            % Output:
+            %   oldDimOrder ... data dim order from before permutation
             
             try
+                oldDimOrder = obj.dataDims;
                 if isnumeric(newDimOrder)
                     newDimIdx = newDimOrder;
                 else
