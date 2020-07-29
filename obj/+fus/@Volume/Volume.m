@@ -84,27 +84,33 @@ classdef Volume < handle & matlab.mixin.Copyable
         
         
         function output = batch(obj,func,varargin)
+            fprintf('Batch processing "%s" on %d planes ',func2str(func),obj.nPlanes)
             for i = 1:obj.nPlanes
                 if nargout == 0
                     func(obj.Plane(i),varargin{:});
                 else
                     output{i} = func(obj.Plane(i),varargin{:});
                 end
+                fprintf('.')
             end
+            fprintf(' done\n')
         end
         
         function output = batch_parallel(obj,func,varargin)
             obj.check_parallel;
-            
+            fprintf('Batch processing "%s" on %d planes ',func2str(func),obj.nPlanes)
             if nargout == 0
                 parfor i = 1:obj.nPlanes
                     func(obj.Plane(i),varargin{:}); %#ok<PFBNS>
+                    fprintf('.')
                 end
             else
                 parfor i = 1:obj.nPlanes
                     output{i} = func(obj.Plane(i),varargin{:}); %#ok<PFBNS>
+                    fprintf('.')
                 end
             end
+            fprintf(' done\n')
         end
         
         
