@@ -111,6 +111,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     methods
         explorer(obj,roiType,logScale)
         explorer_update(obj,roi,event,imAx)
+        remove_outliers(obj,zthr,interpMethod)
         y = expt_design(obj,HR,stimOnOff,display)
         h = image(obj,varargin)
         M = reconstruct(obj,data,fillValue)
