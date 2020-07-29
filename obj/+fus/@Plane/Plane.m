@@ -340,7 +340,13 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         
         
         function detrend(obj,varargin)
+            origDims = obj.dimSizes;
             d = obj.reshape_data({'',obj.timeDimName});
+            for i = 1:size(d,1)
+                d(i,:) = detrend(d(i,:),varargin{:});
+            end
+            obj.set_Data(reshape(d,origDims));
+            obj.update_log('Trials detrended');
         end
         
         
