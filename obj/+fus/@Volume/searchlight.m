@@ -255,7 +255,7 @@ end
 
 
 function update_par_progress(n,idx)
-persistent t
+persistent t ts
 if nargin == 0, t = 0; end
 
 % if nargin > 0
@@ -268,7 +268,23 @@ if mod(t,100)~=0, return; end
 
 v=t/n*100;
 
-fprintf('%s: completed % 3.2f%%\n',datestr(now),v)
+ts(end+1,:) = clock;
+
+avgRecInt = mean(diff(etime(ts(end-min(size(ts,1),20)+1:end,:),ts(end,:))));
+
+estTimeRem = (n-t)*avgRecInt;
+
+if estTimeRem > 3600
+    estTimeRem = estTimeRem / 360;
+    u = 'hr';
+elseif estTimeRem > 60
+    estTimeRem = estTimeRem / 60;
+    u = 'm';
+else
+    u = 's';
+end
+
+fprintf('%s: completed % 3.2f%%, ~%.2f %s remaining\n',datestr(ts(end,:)),v,estTimeRem,u)
 end
 
 

@@ -7,6 +7,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
     end
     
     properties (SetObservable)
+        Name        (1,:) char
         Mask        (1,1) %fus.Mask
         
         Event       (:,1) fus.Event
@@ -17,6 +18,10 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         fgPlane     (1,1) % fus.Plane
         
         useSpatialTform     (1,1) logical = true;
+        
+        role        (1,:) char = 'plane';
+        
+        dataThreshold  (1,1) double = 1;
     end
     
     properties (SetObservable,AbortSet)
@@ -51,7 +56,6 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         
         nFrames
         
-        Name
         FullName
         
         timeDim
@@ -71,6 +75,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         Log
         
         nYX         (1,2)
+                
     end
     
     properties (SetAccess = private)
@@ -86,35 +91,42 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         Parent
     end
     
-    methods (Access = ?fus.Volume)         
-        function obj = Plane(V,data,dataDims,id,Fs)
-            obj.Parent = V;
+%     methods (Access = ?fus.Volume)         
+%         
+%     end
+    
+    methods
+        explorer(obj,roiType,logScale)
+        remove_outliers(obj,zthr,interpMethod)
+        y = expt_design(obj,HR,stimOnOff,display)
+        h = image(obj,varargin)
+        h = overlay(obj,axBg,thr,varargin)
+        M = reconstruct(obj,data,fillValue)
+        
+        function obj = Plane(parent,data,dataDims,id,Fs)
+                        
             if nargin < 2, data = [];     end
-            if nargin < 3, dataDims = ""; end
+            if nargin < 3, dataDims = {'Y' 'X'}; end
             if nargin < 4, id = 1;        end
             if nargin < 5, Fs = 1;        end
+            
+            if ~isempty(parent)
+                obj.Parent = parent;
+            end
             
             postsets = {'Fs','spatialTform','useSpatialTform','spatialCoords','spatialDims','useMask'};
             cellfun(@(a) addlistener(obj,a,'PostSet',@obj.update_log),postsets);
             
             obj.update_log('Plane created');
             
-            obj.set_Data(data,dataDims);
-            
-            obj.create_Structural;
             
             obj.id = id;
             obj.Fs = Fs;
+            
+            obj.set_Data(data,dataDims);
+            
         end
-    end
-    
-    methods
-        explorer(obj,roiType,logScale)
-        explorer_update(obj,roi,event,imAx)
-        remove_outliers(obj,zthr,interpMethod)
-        y = expt_design(obj,HR,stimOnOff,display)
-        h = image(obj,varargin)
-        M = reconstruct(obj,data,fillValue)
+        
         
         function set_Data(obj,data,dataDims)
             % set_Data(obj,data,[dataDims])
@@ -127,10 +139,6 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
                 dataDims = obj.dataDims;
             end
             
-            assert(ndims(data) > 2, ...
-                'fus:Plane:set_Data:InvalidDims', ...
-                'ndims(data) must be >= 2') %#ok<ISMAT>
-            
             assert(ndims(data) == numel(dataDims), ...
                 'fus:Plane:set_Data:DimMismatch', ...
                 'ndims(data) ~= numel(dataDims)')            
@@ -142,25 +150,52 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
                 end
             end
             
-            obj.nYX = [size(data,1) size(data,2)];
-            
-            obj.Data = data; clear data
+            obj.nYX = size(data,[1 2]);
             
             obj.dataDims = dataDims;
+
+            obj.Data = data; clear data            
             
             obj.update_log('Data updated %s; dims: %s',mat2str(obj.dimSizes),obj.dataDimsStr);
             
             if ~obj.initialized
                 obj.Mask = fus.Mask(obj);
                 obj.update_log('ROI mask initialized');
+                
+                obj.create_Structural;
+                
+                if isequal(obj.role,'plane')
+                    obj.set_Background(obj.Structural,{'Y' 'X'});
+                    obj.set_Foreground(nan(obj.nYX),{'Y' 'X'});
+                end
             end
                         
             
             obj.initialized = true;
         end
         
+        function set_Background(obj,data,dataDims,name)
+            if nargin < 4 || isempty(name), name = ''; end
+            obj.bgPlane = fus.Plane(obj);
+            obj.bgPlane.role = 'background';
+            obj.bgPlane.Name = name;
+            obj.bgPlane.set_Data(data,dataDims);
+        end
+        
+        function set_Foreground(obj,data,dataDims,name)
+            if nargin < 4 || isempty(name), name = ''; end
+            obj.fgPlane = fus.Plane(obj);
+            obj.fgPlane.role = 'foreground';
+            obj.fgPlane.Name = name;
+            obj.fgPlane.set_Data(data,dataDims);
+        end
+        
         function create_Structural(obj)
-            obj.Structural = log10(mean(obj.Data,3:length(obj.dimSizes),'omitnan'));
+            if obj.nDims > 2
+                obj.Structural = log10(mean(obj.Data,3:length(obj.dimSizes),'omitnan'));
+            else
+                obj.Structural = obj.Data;
+            end
         end
         
         
@@ -414,7 +449,11 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         end
         
         function n = get.Name(obj)
-             n = compose("Plane %d",obj.id);
+            if isempty(obj.Name)
+                n = compose("Plane %d",obj.id);
+            else
+                n = obj.Name;
+            end
         end
         
         function n = get.FullName(obj)
@@ -436,6 +475,12 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         
         function d = get.repsDim(obj)
             d = obj.find_dim(obj.repsDimName);
+        end
+        
+       
+        function set.role(obj,r)
+            obj.role = r;
+            obj.update_log('Role set to "%s"',r)
         end
         
     end % methods (Public); set/get

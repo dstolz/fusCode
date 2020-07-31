@@ -15,8 +15,12 @@ if isempty(h)
     axis(ax,'image')
     set(ax,'xtick',[],'ytick',[]);
     colormap(ax,bone(512))
-    addlistener(obj,'Structural','PostSet',@(src,event) obj.image(src,event,h));
+    evl = addlistener(obj,'Structural','PostSet',@(src,event) obj.image(src,event,h));
+    set(ax,'DeleteFcn',@(~,~) delete(evl));
+
 else
     h.CData = obj.Structural;
 end
 
+ax.Title.String = obj.FullName;
+ax.Title.Interpreter = 'none';

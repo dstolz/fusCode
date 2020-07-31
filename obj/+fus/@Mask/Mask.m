@@ -135,7 +135,10 @@ classdef Mask < handle & matlab.mixin.SetGet & matlab.mixin.Copyable
             hold(ax,'off');
             
             obj.update_overlay([],[],h)
-            addlistener(obj,'mask','PostSet', @(src,evnt) obj.update_overlay(src,evnt,h));
+            evl = addlistener(obj,'mask','PostSet', @(src,evnt) obj.update_overlay(src,evnt,h));
+
+            set(ax,'DeleteFcn',@(~,~) delete(evl));
+
         end
         
         function set.mask(obj,ind)
