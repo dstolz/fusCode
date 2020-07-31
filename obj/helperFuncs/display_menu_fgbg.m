@@ -105,9 +105,9 @@ switch src.Tag
         
     case 'alpha'
         r = inputdlg('Set data opacity (alpha). Value must be between [0 1].','Data',1, ...
-            {mat2str(max(h.AlphaData(:),[],'omitnan'),3)},opts);
+            {mat2str(max(h.AlphaData(:),[],'omitnan'),2)},opts);
         if isempty(r), return; end
-        r = str2num(r{1}); %#ok<ST2NM>
+        r = str2double(r{1});
         a = h.AlphaData;
         a = a ./ max(a(:),[],'omitnan') * r;
         h.AlphaData = a;
