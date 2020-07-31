@@ -40,7 +40,7 @@ end
 
 alpha = getpref('fus_Plane_display','alpha',.75);
 
-aind = obj.fgPlane.Data >= thr;
+aind = single(obj.fgPlane.Data >= thr);
 if nnz(aind) == 0
     fprintf('%s: Note that no foreground voxels have values >= %.2f\n',obj.FullName,thr)
     ctxmsg

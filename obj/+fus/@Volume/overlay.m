@@ -29,7 +29,7 @@ for i = 1:obj.nPlanes
     planeIdx = cat(3,planeIdx,i*ones(size(d),'uint8'));
 end
 
-bgData = imtile(bgData,'GridSize',gridSize);
+bgData   = imtile(bgData,'GridSize',gridSize);
 planeIdx = imtile(planeIdx,'GridSize',gridSize);
 
 h(1) = imagesc(axBg,bgData,'Tag','background');
@@ -67,7 +67,7 @@ axFg = axes(figH);
 
 alpha = getpref('fus_Plane_display','alpha',.75);
 
-aind = fgData >= thr;
+aind = single(fgData >= thr);
 if nnz(aind) == 0
     fprintf('%s: Note that no foreground voxels have values >= %.2f\n',obj.Name,thr)
     ctxmsg
