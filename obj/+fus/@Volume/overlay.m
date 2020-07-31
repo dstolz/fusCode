@@ -18,7 +18,7 @@ if nargin < 6 || isempty(watch), watch = true; end
 figH = axBg.Parent;
 
 
-bgData = []; planeIdx = 1;
+bgData = []; planeIdx = uint8([]);
 for i = 1:obj.nPlanes
     if isempty(obj.Plane(i).bgPlane)
         d = nan(obj.Plane(i).nYX);
@@ -26,10 +26,11 @@ for i = 1:obj.nPlanes
         d = obj.Plane(i).bgPlane.Data;
     end
     bgData = cat(3,bgData,d);
-    planeIdx(end+1) = numel(bgData);
+    planeIdx = cat(3,planeIdx,i*ones(size(d),'uint8'));
 end
 
 bgData = imtile(bgData,'GridSize',gridSize);
+planeIdx = imtile(planeIdx,'GridSize',gridSize);
 
 h(1) = imagesc(axBg,bgData,'Tag','background');
 clear bgData

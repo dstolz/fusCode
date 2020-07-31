@@ -42,7 +42,6 @@ uimenu(ctm,'Tag','clim', ...
     'accelerator','L', ...
     'MenuSelectedFcn',@(src,event) mnu_update(src,event,obj,fgH));
 
-
 uimenu(ctm,'Tag','alpha', ...
     'Text',sprintf('Opacity (&alpha) = %.2f',max(fgH.AlphaData(:),[],'omitnan')), ...
     'accelerator','A', ...
@@ -133,9 +132,7 @@ switch src.Tag
         
     case 'popout'
         cp = round(ax.CurrentPoint(1,1:2));
-        cp = sub2ind(size(h.CData),cp(2),cp(1));
-        idx = ax.UserData.planeIdx;
-        pid = find(cp >= idx(1:end-1) & cp < idx(2:end))+1;
+        pid = ax.UserData.planeIdx(cp(2),cp(1));
         p = obj.Plane(pid);
         figure('Name',p.FullName);
         p.overlay;
