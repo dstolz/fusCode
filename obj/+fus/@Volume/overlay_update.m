@@ -3,6 +3,17 @@ function overlay_update(obj,src,event,h)
 
 
 
+fgH = h(ismember({h.Tag},'foreground'));
+bgH = h(ismember({h.Tag},'background'));
+
+fgAx = ancestor(fgH,'axes');
+bgAx = ancestor(bgH,'axes');
+
+figH = ancestor(fgH,'figure');
+
+
+
+% background
 data = [];
 for i = 1:obj.nPlanes
     if isempty(obj.Plane(i).bgPlane)
@@ -13,15 +24,15 @@ for i = 1:obj.nPlanes
     data = cat(3,data,d);
 end
 
-data = imtile(data,'GridSize',gridSize);
+data = imtile(data,'GridSize',bgAx.UserData.gridSize);
 
-h(1).CData = data;
-
-
+bgH.CData = data;
 
 
 
 
+
+% foreground
 data = [];
 for i = 1:obj.nPlanes
     if isempty(obj.Plane(i).fgPlane)
@@ -32,10 +43,10 @@ for i = 1:obj.nPlanes
     data = cat(3,data,d);
 end
 
-data = imtile(data,'GridSize',gridSize);
+data = imtile(data,'GridSize',fgAx.UserData.gridSize);
 
-h(2).CData = data;
-h(2).AlphaData = .75 * data >= obj.fgPlane.dataThreshold;
+fgH.CData = data;
+fgH.AlphaData = .75 * data >= obj.Plane(1).fgPlane.dataThreshold;
 
 
 

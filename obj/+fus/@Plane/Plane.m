@@ -100,7 +100,7 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         remove_outliers(obj,zthr,interpMethod)
         y = expt_design(obj,HR,stimOnOff,display)
         h = image(obj,varargin)
-        h = overlay(obj,axBg,thr,varargin)
+        h = overlay(obj,axBg,thr,watch)
         M = reconstruct(obj,data,fillValue)
         
         function obj = Plane(parent,data,dataDims,id,Fs)

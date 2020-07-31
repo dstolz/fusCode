@@ -1,5 +1,5 @@
-function h = overlay(obj,axBg,thr) % fus.Plane
-% [h] = overlay(Plane,a[xBg],[thr])
+function h = overlay(obj,axBg,thr,watch) % fus.Plane
+% [h] = overlay(Plane,a[xBg],[thr],[watch])
 %
 % example:
 %   
@@ -12,7 +12,7 @@ function h = overlay(obj,axBg,thr) % fus.Plane
 
 if nargin < 2 || isempty(axBg), axBg = gca; end
 if nargin < 3, thr = obj.fgPlane.dataThreshold; end
-
+if nargin < 4 || isempty(watch), watch = true; end
 
 
 
@@ -31,17 +31,6 @@ my_colormaps(bgCM,axBg);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 axFg = axes(figH);
 
 % TODO Needs checking for dimensional agreement with bg (?)
@@ -54,6 +43,7 @@ alpha = getpref('fus_Plane_display','alpha',.75);
 aind = obj.fgPlane.Data >= thr;
 if nnz(aind) == 0
     fprintf('%s: Note that no foreground voxels have values >= %.2f\n',obj.FullName,thr)
+    ctxmsg
 end
 h(2) = imagesc(axFg,obj.fgPlane.Data,'AlphaData',aind*alpha,'Tag','foreground');
 
@@ -87,13 +77,12 @@ linkprop([axBg axFg],{'Position'});
 axis(axFg,'image');
 axis(axBg,'image');
 
-
-% listen for changes in object properties
-evl1 = addlistener([obj.fgPlane obj.bgPlane],'Data','PostSet', @(src,event) obj.overlay_update(src,event,h));
-evl2 = addlistener(obj.fgPlane,'dataThreshold','PostSet', @(src,event) obj.overlay_update(src,event,h));
-
-set([axBg axFg],'DeleteFcn',@(~,~) delete([evl1; evl2]));
-
+if watch
+    % listen for changes in object properties
+    evl1 = addlistener([obj.fgPlane obj.bgPlane],'Data','PostSet', @(src,event) obj.overlay_update(src,event,h));
+    evl2 = addlistener(obj.fgPlane,'dataThreshold','PostSet', @(src,event) obj.overlay_update(src,event,h));
+    set([axBg axFg],'DeleteFcn',@(~,~) delete([evl1; evl2]));
+end
 
 
 display_menu_fgbg(obj,h);
@@ -104,6 +93,8 @@ if nargout == 0, clear h; end
 
 
 
+function ctxmsg
+disp('Right click the plot for options')
 
 
 
