@@ -8,7 +8,7 @@ function h = overlay(obj,axBg,gridSize,fgData,thr,watch) % fus.Volume
 
 
 if nargin < 2 || isempty(axBg), axBg = gca; end
-if nargin < 3, gridSize = obj.grid_size; end
+if nargin < 3 || isempty(gridSize), gridSize = obj.grid_size; end
 if nargin < 4, fgData = []; end
 if nargin < 5, thr = []; end
 if nargin < 6 || isempty(watch), watch = true; end

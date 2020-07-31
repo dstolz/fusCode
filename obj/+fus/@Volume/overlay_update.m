@@ -33,6 +33,8 @@ bgH.CData = data;
 
 
 % foreground
+alpha = getpref('fus_Plane_display','alpha',.75);
+
 data = [];
 for i = 1:obj.nPlanes
     if isempty(obj.Plane(i).fgPlane)
@@ -46,11 +48,7 @@ end
 data = imtile(data,'GridSize',fgAx.UserData.gridSize);
 
 fgH.CData = data;
-fgH.AlphaData = .75 * data >= obj.Plane(1).fgPlane.dataThreshold;
-
-
+fgH.AlphaData = alpha * single(data >= obj.Plane(1).fgPlane.dataThreshold);
 
 drawnow
-
-
 
