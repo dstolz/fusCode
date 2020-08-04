@@ -275,7 +275,7 @@ avgRecInt = mean(diff(etime(ts(end-min(size(ts,1),20)+1:end,:),ts(end,:))));
 estTimeRem = (n-t)*avgRecInt;
 
 if estTimeRem > 3600
-    estTimeRem = estTimeRem / 360;
+    estTimeRem = estTimeRem / 3600;
     u = 'hr';
 elseif estTimeRem > 60
     estTimeRem = estTimeRem / 60;
