@@ -123,6 +123,7 @@ if par.useParallel && obj.check_parallel
     Q = parallel.pool.DataQueue;
     afterEach(Q,@(idx) update_par_progress(numIter,idx));
     
+    try
         fprintf('Submitting jobs to %d workers ...\n',p.NumWorkers)
         f(1:p.NumWorkers) = parallel.FevalFuture;
         for i = 1:p.NumWorkers
