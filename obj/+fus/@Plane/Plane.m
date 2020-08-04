@@ -1,13 +1,13 @@
 classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicprops
     
     properties
-        id       (1,1) uint16 = 1;
+        id       (1,1) uint16 {mustBePositive,mustBeInteger,mustBeFinite} = 1;
         
         UserData
     end
     
     properties (SetObservable)
-        Name        (1,:) char
+        Name        (1,:) char = 'plane'
         Mask        (1,1) %fus.Mask
         
         Event       (:,1) fus.Event
@@ -38,9 +38,9 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         useMask            (1,1) logical = true;
         
         
-        timeDimName     (1,1) string = "Time";
-        eventDimName    (1,1) string = "Events";
-        repsDimName     (1,1) string = "Reps";
+        timeDimName     (1,:) char = 'Time';
+        eventDimName    (1,:) char = 'Events';
+        repsDimName     (1,:) char = 'Reps';
     end
     
     properties (Dependent)

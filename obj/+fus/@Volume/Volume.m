@@ -56,7 +56,11 @@ classdef Volume < handle & matlab.mixin.Copyable
             % add_plane(obj,fullFileName,[dataDims],[Fs])
             
             if ischar(data) || isstring(data)
-                load(data,'-mat'); % may contain dataDims
+                try
+                    load(data,'data','dataDims','-mat'); % may contain dataDims
+                catch
+                    load(data,'data','-mat'); % may contain dataDims
+                end
             end
             
 %             assert(ndims(data) == length(dims), 'fus:Volume:DimMismatch', ...
@@ -86,6 +90,7 @@ classdef Volume < handle & matlab.mixin.Copyable
         
         function output = batch(obj,func,varargin)
             fprintf('Batch processing "%s" on %d planes ',func2str(func),obj.nPlanes)
+            output = cell(obj.nPlanes,1);
             for i = 1:obj.nPlanes
                 if nargout == 0
                     func(obj.Plane(i),varargin{:});
@@ -95,6 +100,7 @@ classdef Volume < handle & matlab.mixin.Copyable
                 fprintf('.')
             end
             fprintf(' done\n')
+            if nargout == 0, clear output; end
         end
         
         function output = batch_parallel(obj,func,varargin)
@@ -165,8 +171,8 @@ classdef Volume < handle & matlab.mixin.Copyable
         end
         
         function set.active(obj,id)
-            mustBeLessThanOrEqual(id,obj.nPlanes)
-            a = false(1,obj.nPlanes);
+            mustBeLessThanOrEqual(id,obj.nPlanes) %#ok<MCSUP>
+            a = false(1,obj.nPlanes); %#ok<MCSUP>
             a(id) = true;
             obj.active = a;
         end
