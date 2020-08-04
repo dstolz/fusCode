@@ -18,7 +18,7 @@ n = obj.num;
 
 ind = createMask(roi);
 
-d = setdiff(obj.dimOrder,{obj.eventDimName obj.timeDimName});
+d = setdiff(obj.dimOrder,[obj.eventDimName obj.timeDimName]);
 mROI = mean(plane_subset(obj.Data,ind),obj.find_dim(d),'omitnan');
 
 mROI = squeeze(mROI);
