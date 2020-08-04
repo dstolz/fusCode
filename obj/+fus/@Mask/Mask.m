@@ -124,14 +124,21 @@ classdef Mask < handle & matlab.mixin.SetGet & matlab.mixin.Copyable
         function h = draw_overlay(obj,ax)
             if nargin < 2, ax = gca; end
             
-            hold(ax,'on');
             c = obj.coords;
+            
+            if isempty(c)
+                c = nan(1,2);
+            end
+            
+            hold(ax,'on');
+            
             h = patch(ax,c(:,1),c(:,2),[0 1 1]);
             h.Tag = ['Patch_' obj.uniqueTag];
             h.EdgeColor = [0 1 1];
             h.FaceAlpha = .2;
             h.EdgeAlpha = .8;
             h.LineWidth = 2;
+            
             hold(ax,'off');
             
             obj.update_overlay([],[],h)
