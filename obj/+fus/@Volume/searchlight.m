@@ -270,7 +270,7 @@ v=t/n*100;
 
 ts(end+1,:) = clock;
 
-avgRecInt = mean(diff(etime(ts(end-min(size(ts,1),20)+1:end,:),ts(end,:))));
+avgRecInt = median(diff(etime(ts(end-min(size(ts,1),30)+1:end,:),ts(end,:))));
 
 estTimeRem = (n-t)*avgRecInt;
 
