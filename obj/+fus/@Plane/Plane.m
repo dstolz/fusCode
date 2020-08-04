@@ -184,6 +184,14 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         
         function set_Foreground(obj,data,dataDims,name)
             if nargin < 4 || isempty(name), name = ''; end
+            
+            if nargin < 3 || isempty(dataDims)
+                dataDims = {'Y','X'};
+                if ~ismatrix(data)
+                    addDims = strtrim(cellstr(num2str((3:ndims(data))','Dim_%d')));
+                    dataDims = [dataDims addDims'];
+                end
+            end
             obj.fgPlane = fus.Plane(obj);
             obj.fgPlane.role = 'foreground';
             obj.fgPlane.Name = name;
@@ -204,7 +212,9 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
             dimOrd = lower(string(obj.dataDims));
             d = zeros(size(dimStr));
             for i = 1:numel(dimStr)
-                d(i) = find(ismember(dimOrd,dimStr(i)));
+                f = find(ismember(dimOrd,dimStr(i)));
+                if isempty(f), f = nan; end
+                d(i) = f;
             end
         end
         
