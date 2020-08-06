@@ -125,20 +125,30 @@ if par.useParallel && obj.check_parallel
     
     try
         fprintf('Submitting jobs to %d workers ...\n',p.NumWorkers)
-        f(1:p.NumWorkers) = parallel.FevalFuture;
-        for i = 1:p.NumWorkers
+        
+        idx = {};
+        
+        step = min(1000,round(numIter/p.NumWorkers));
+        
+        for i = 1:step:numIter
+            idx{end+1} = i:min(i+step-1,numIter);
+        end
+        
+        if idx{end}(end)~=numIter
+            idx{end+1} = idx{end}(end)+1:numIter;
+        end
+        f(length(idx)) = parallel.FevalFuture;
+        for i = 1:length(idx)
             % stratify voxels across workers to try to balance it
-            idx = i:p.NumWorkers:numIter;
-            f(i) = parfeval(p,@iter_parallel,2,Q,idx,M,blkVec,blankVol,volSize,par);
+            f(i) = parfeval(p,@iter_parallel,2,Q,idx{i},M,blkVec,blankVol,volSize,par);
         end
         
         wait(f);
         
         R = cell(volSize);
-        n = zeros(volSize);
-        for i = 1:p.NumWorkers
-            idx = i:p.NumWorkers:numIter;
-            [R(idx),n(idx)] = fetchOutputs(f(i));
+        n = zeros(volSize,'uint16');
+        for i = 1:length(idx)
+            [R(idx{i}),n(idx{i})] = fetchOutputs(f(i));
         end
         
         cancel(f);
@@ -173,8 +183,8 @@ end
 
 t = toc(startTime);
 if t > 3600
-    t = t / 360;
-    u = 'hr';
+    t = t / 3600;
+    u = 'h';
 elseif t > 60
     t = t / 60;
     u = 'm';
@@ -182,7 +192,7 @@ else
     u = 's';
 end
 
-fprintf('completed 100%% in %.2f %s\n',t,u)
+fprintf('%s: completed 100.00%% in %.2f %s\n',datestr(now),t,u)
 end
 
 function [R,n] = iter(M,blkVec,blankVol,volSize,i,par)
@@ -270,21 +280,19 @@ v=t/n*100;
 
 ts(end+1,:) = clock;
 
-avgRecInt = median(diff(etime(ts(end-min(size(ts,1),30)+1:end,:),ts(end,:))));
+avgRecInt = mean(diff(etime(ts(end-min(size(ts,1),30)+1:end,:),ts(end,:))));
 
 estTimeRem = (n-t)*avgRecInt;
 
 if estTimeRem > 3600
     estTimeRem = estTimeRem / 3600;
-    u = 'hr';
-elseif estTimeRem > 60
-    estTimeRem = estTimeRem / 60;
     u = 'm';
 else
+    estTimeRem = estTimeRem / 60;
     u = 's';
 end
 
-fprintf('%s: completed % 3.2f%%, ~%.2f %s remaining\n',datestr(ts(end,:)),v,estTimeRem,u)
+fprintf('%s: completed % 3.2f%%, ~% 5.2f %s remaining\n',datestr(ts(end,:)),v,estTimeRem,u)
 end
 
 
@@ -316,9 +324,9 @@ assert(numel(par.blockSize)==3, ...
     'fus:Volume:searchlight:InvalidSize', ...
     'blockSize must be a 3 element, positive integer array');
 
-assert(par.minNumVoxels < prod(par.blockSize), ...
+assert(par.minNumVoxels <= prod(par.blockSize), ...
     'fus:Volume:searchlight:ValueOutOfRange', ...
-    'minNumVoxels must be less than the prod(blockSize)');
+    'minNumVoxels must be less or equal to prod(blockSize)');
 end
 
 
