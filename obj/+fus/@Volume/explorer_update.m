@@ -21,7 +21,7 @@ rind = createMask(roi);
 
 planesIncl = imAx.UserData.planeIdx(rind);
 u = unique(planesIncl);
-
+u(u==0) = [];
 vxCount = 0;
 M = [];
 for i= 1:length(u)
@@ -36,6 +36,7 @@ for i= 1:length(u)
     
     M = cat(1,M,plane_subset(obj.Plane(u(i)).Data,rpind));
 end
+
 
 d = setdiff(P.dimOrder,{P.eventDimName P.timeDimName});
 mROI = mean(M,P.find_dim(d),'omitnan');
@@ -77,6 +78,6 @@ end
 
 ylabel(ax,{sprintf('%d pixels in ROI',vxCount); 'mean ampl. (arb units)'})
 
-
+title(imAx,sprintf('%s - Selected Plane(s) %s',obj.Name,mat2str(u')))
 
 
