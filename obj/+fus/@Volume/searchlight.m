@@ -126,20 +126,20 @@ if par.useParallel && obj.check_parallel
     try
         fprintf('Submitting jobs to %d workers ...\n',p.NumWorkers)
         
+        
         idx = {};
-        
-        step = min(1000,round(numIter/p.NumWorkers));
-        
-        for i = 1:step:numIter
-            idx{end+1} = i:min(i+step-1,numIter);
+        step = ceil(numIter/p.NumWorkers);
+        k = 1;
+        for i = 1:p.NumWorkers
+            idx{i} = i:p.NumWorkers:numIter;
         end
+        r = setdiff(cell2mat(idx),1:numIter);
+        if ~isempty(r), idx{end+1} = r; end
         
-        if idx{end}(end)~=numIter
-            idx{end+1} = idx{end}(end)+1:numIter;
-        end
+        idx = cellfun(@(a) a(randperm(length(a))),idx,'uni',0);
+        
         f(length(idx)) = parallel.FevalFuture;
         for i = 1:length(idx)
-            % stratify voxels across workers to try to balance it
             f(i) = parfeval(p,@iter_parallel,2,Q,idx{i},M,blkVec,blankVol,volSize,par);
         end
         
@@ -147,7 +147,7 @@ if par.useParallel && obj.check_parallel
         
         R = cell(volSize);
         n = zeros(volSize,'uint16');
-        for i = 1:length(idx)
+        for i = 1:length(f)
             [R(idx{i}),n(idx{i})] = fetchOutputs(f(i));
         end
         
