@@ -128,7 +128,8 @@ V.montage;
 
 
 
-
+%% Explore averaged trial date for dach stimulus for a volume
+V.explorer;
 
 
 %% Explore averaged trial data for each stimulus for a plane

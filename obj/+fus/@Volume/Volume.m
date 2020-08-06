@@ -37,6 +37,7 @@ classdef Volume < handle & matlab.mixin.Copyable
         [s,origIdx,dimOrder] = slice(obj,ind)
         [R,n] = searchlight(obj,fnc,blkSize,varargin)
         h = overlay(obj,axBg,gridSize,fgData,thr,watch)
+        explorer(obj,tool)
         
         function obj = Volume(data,dataDims)
             % obj = Volume
