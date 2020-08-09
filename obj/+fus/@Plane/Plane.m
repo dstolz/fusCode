@@ -104,11 +104,11 @@ classdef Plane < handle & matlab.mixin.SetGet & matlab.mixin.Copyable & dynamicp
         M = reconstruct(obj,data,fillValue)
         
         function obj = Plane(parent,data,dataDims,id,Fs)
-                        
-            if nargin < 2, data = [];     end
+            if nargin < 1, parent =[];  end   
+            if nargin < 2, data = [];   end
             if nargin < 3, dataDims = {'Y' 'X'}; end
-            if nargin < 4, id = 1;        end
-            if nargin < 5, Fs = 1;        end
+            if nargin < 4, id = 1;      end
+            if nargin < 5, Fs = 1;      end
             
             if ~isempty(parent)
                 obj.Parent = parent;
