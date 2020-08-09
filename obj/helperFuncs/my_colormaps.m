@@ -9,7 +9,12 @@ if nargin < 3 || isempty(n), n = 128; end
 if nargin < 4, interpType = 'makima'; end
 
 
+
+
 switch type
+    case 'list'
+        disp('rainbow')
+        disp('coarseRainbow')
     
     case 'rainbow'
         cm = [1 0 0;
