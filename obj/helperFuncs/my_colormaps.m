@@ -13,8 +13,13 @@ if nargin < 4, interpType = 'makima'; end
 
 switch type
     case 'list'
-        disp('rainbow')
-        disp('coarseRainbow')
+        cm = {'rainbow','coarseRainbow','*any combination of r g b w k c y  m, ex: rwb*'};
+        if nargout == 0
+            cellfun(@display,cm)
+            clear cm
+        end
+        
+        return
     
     case 'rainbow'
         cm = [1 0 0;
