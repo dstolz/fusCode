@@ -40,12 +40,12 @@ function [R,n] = searchlight(obj,fnc,varargin)
 %                       1] will process a single voxel at a time.  Note
 %                       that any block with a size greater than [1 1 1]
 %                       will overlap with its neighbors in all dimensions.
-%                       default = [3 3 3]
+%                       default = [3 3 1]
 %    'minNumVoxels' ... scalar integer indicating the minimum number of
 %                       voxels to include when calling fnc.  This handles
 %                       edge cases so that voxels on the end planes and
 %                       other boundaries can be analyzed.
-%                       Default = floor(prod(blockSize)/2)
+%                       Default = prod(blockSize)
 %    'useParallel'  ... logical value indcating whether to use the
 %                       Parallel Computing Toolbox when looping over each
 %                       voxel. default = true if toolbox is available.
@@ -73,8 +73,8 @@ assert(isa(fnc,'function_handle'), ...
     'fnc must be a function handle');
 
 
-par.blockSize = [3 3 3];
-par.minNumVoxels = floor(prod(par.blockSize)/2); % [3 3 3] = 27 = complete cube
+par.blockSize = [3 3 1];
+par.minNumVoxels = prod(par.blockSize);
 par.useParallel = ~isempty(ver('parallel'));
 par.UniformOutput = false;
 par.fncParams = [];
@@ -128,17 +128,16 @@ if par.useParallel && obj.check_parallel
         
         
         idx = {};
-        step = ceil(numIter/p.NumWorkers);
-        k = 1;
         for i = 1:p.NumWorkers
             idx{i} = i:p.NumWorkers:numIter;
         end
         r = setdiff(cell2mat(idx),1:numIter);
         if ~isempty(r), idx{end+1} = r; end
         
+        % randomize order to better distribute load across processors
         idx = cellfun(@(a) a(randperm(length(a))),idx,'uni',0);
         
-        f(length(idx)) = parallel.FevalFuture;
+        f(length(idx),1) = parallel.FevalFuture;
         for i = 1:length(idx)
             f(i) = parfeval(p,@iter_parallel,2,Q,idx{i},M,blkVec,blankVol,volSize,par);
         end
@@ -158,14 +157,15 @@ if par.useParallel && obj.check_parallel
     end
     
 else
-    if par.showProgress, parfor_progress(numIter); end
+    if par.showProgress, update_par_progress; end
     R = cell(volSize);
     n = zeros(volSize,'single');
-    for i = 1:numIter
+    idx = randperm(numIter); % so that the time remaining estimate might be a bit more accurate
+    for i = idx
         [R{i},n(i)] = iter(M,blkVec,blankVol,volSize,i,par);
-        if par.showProgress, parfor_progress; end
+        if par.showProgress, update_par_progress(numIter); end
     end
-    if par.showProgress, parfor_progress(0); end
+
     
 end
 
@@ -196,7 +196,7 @@ fprintf('%s: completed 100.00%% in %.2f %s\n',datestr(now),t,u)
 end
 
 function [R,n] = iter(M,blkVec,blankVol,volSize,i,par)
-R = []; n = 0;
+R = [];
 
 [y,x,z] = ind2sub(volSize,i);
 idxy = y+blkVec{1};
@@ -210,20 +210,19 @@ idxz(idxz<1|idxz>volSize(3)) = [];
 ind = blankVol;
 ind(idxy,idxx,idxz) = true;
 
-nPx = sum(ind(:));
-if nPx < par.minNumVoxels
-    if par.showProgress, parfor_progress; end
-    return
-end
+n = sum(ind(:));
+if n < par.minNumVoxels, return; end
 
 % slice data
 ndM = ndims(M);
 s = repmat({':'},1,ndM);
 s{1} = ind(:);
 
-n = nnz(ind);
+m = M(s{:});
 
-R = feval(par.fnc,M(s{:}),par.fncParams);
+if all(isnan(m(:))), return; end
+
+R = feval(par.fnc,m,par.fncParams);
 end
 
 function [R,n] = iter_parallel(Q,idx,M,blkVec,blankVol,volSize,par)
@@ -268,10 +267,6 @@ function update_par_progress(n,idx)
 persistent t ts
 if nargin == 0, t = 0; end
 
-% if nargin > 0
-%     fprintf(repmat('\b',1,39))
-% end
-
 t = t + 1;
 
 if mod(t,100)~=0, return; end
@@ -282,17 +277,23 @@ ts(end+1,:) = clock;
 
 avgRecInt = mean(diff(etime(ts(end-min(size(ts,1),30)+1:end,:),ts(end,:))));
 
-estTimeRem = (n-t)*avgRecInt;
+estTimeRem = (n-t)*(avgRecInt/100);
 
 if estTimeRem > 3600
     estTimeRem = estTimeRem / 3600;
+    u = 'h';
+elseif estTimeRem > 360
+    estTimeRem = estTimeRem / 360;
     u = 'm';
 else
     estTimeRem = estTimeRem / 60;
     u = 's';
 end
-
-fprintf('%s: completed % 3.2f%%, ~% 5.2f %s remaining\n',datestr(ts(end,:)),v,estTimeRem,u)
+if isnan(estTimeRem)
+    fprintf('%s: completed % 3.2f%%, ~ ???? %s remaining\n',datestr(ts(end,:)),v,u)
+else
+    fprintf('%s: completed % 3.2f%%, ~% 5.2f %s remaining\n',datestr(ts(end,:)),v,estTimeRem,u)
+end
 end
 
 
