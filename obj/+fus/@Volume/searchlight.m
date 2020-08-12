@@ -192,7 +192,7 @@ else
     u = 's';
 end
 
-fprintf('%s: completed 100.00%% in %.2f %s\n',datestr(now),t,u)
+fprintf('%s: completed processing %d voxels in %.2f %s\n',datestr(now),numIter,t,u)
 end
 
 function [R,n] = iter(M,blkVec,blankVol,volSize,i,par)
@@ -282,18 +282,19 @@ estTimeRem = (n-t)*(avgRecInt/100);
 if estTimeRem > 3600
     estTimeRem = estTimeRem / 3600;
     u = 'h';
-elseif estTimeRem > 360
-    estTimeRem = estTimeRem / 360;
+elseif estTimeRem > 60
+    estTimeRem = estTimeRem / 60;
     u = 'm';
 else
-    estTimeRem = estTimeRem / 60;
     u = 's';
 end
+
 if isnan(estTimeRem)
     fprintf('%s: completed % 3.2f%%, ~ ???? %s remaining\n',datestr(ts(end,:)),v,u)
 else
     fprintf('%s: completed % 3.2f%%, ~% 5.2f %s remaining\n',datestr(ts(end,:)),v,estTimeRem,u)
 end
+
 end
 
 
