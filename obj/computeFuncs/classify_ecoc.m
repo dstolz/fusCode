@@ -68,21 +68,28 @@ if par.averageFrames
     % -> Voxels x Events x Reps(mean(Time))
     x = mean(x,4,'omitnan');
 else
-    % -> Voxels x Events x Reps*Time
-    x = reshape(x,[n(1) n(2) n(3)*n(4)]);
+%     % -> Voxels x Events x Reps*Time
+    % -> Voxels*Time x Events x Reps
+    x = permute(x,[1 4 2 3]);
+    x = reshape(x,[n(1)*n(4) 1 n(2) n(3)]);
+    x = squeeze(x);
 end
 
 n = size(x,1:3); % Voxels x Events x Reps
 
-% event classes
-y = ones(n(3),1)*(1:n(2));
-y = y(:);
 
 
 % Voxels x Events x Reps -> Voxels x Events*Reps
 x = reshape(x,[n(1) n(2)*n(3)]);
 x = x'; % -> Events*Reps x Voxels | Observations x Predictors(Features)
 
+
+% event classes - make certain correct labels match data in x
+y = nan(n(1:3));
+for i = 1:n(2), y(:,i,:) = i; end
+y = reshape(y,[n(1) n(2)*n(3)]);
+y = y';
+y(:,2:end) = [];
 
 if isa(par.weights,'function_handle')
     w = feval(par.weights,n);
