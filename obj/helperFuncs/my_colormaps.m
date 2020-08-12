@@ -13,7 +13,7 @@ if nargin < 4, interpType = 'makima'; end
 
 switch type
     case 'list'
-        cm = {'rainbow','coarseRainbow','*any combination of r g b w k c y  m, ex: rwb*'};
+        cm = {'rainbow','coarseRainbow','coarseRainbowBG','*any combination of r g b w k c y  m, ex: rwb*'};
         if nargout == 0
             cellfun(@display,cm)
             clear cm
@@ -37,7 +37,15 @@ switch type
               .93 .89 .30; ...
               1.0 .42 0; ...
               .77 .07 0];
-        
+          
+    case 'coarseRainbowBG'
+        cm = [0 0 0; ...
+            0 .49 .76; ...
+            .12 .85 .89; ...
+            .93 .89 .30; ...
+            1.0 .42 0; ...
+            .77 .07 0];
+          
     otherwise % try builtin map or char colors
         
         if exist(type,'file')
