@@ -55,8 +55,8 @@ grid(axTime,'on');
 
 n = P.num;
 
-axTime.XLim  = [1 n.(P.timeDimName)];
-axTime2.XLim = [0 (n.(P.timeDimName)-1)/P.Fs];
+axTime.XLim  = [1 max(2,n.(P.timeDimName))];
+axTime2.XLim = [0 max(1,(n.(P.timeDimName)-1)/P.Fs)];
 axTime.XAxisLocation = 'top';
 x = (axTime.XAxis.TickValues-1)/P.Fs;
 axTime2.XAxis.TickValues = x;
@@ -85,6 +85,10 @@ for i = 1:nEvent
         'DisplayName',sprintf('Event %d',i)); %#ok<AGROW>
 end
 
+if P.num.(P.timeDimName) == 1
+    set(hs,'Marker','o','MarkerSize',10);
+end
+
 hl = legend(axTime,hs, ...
     'Location','EastOutside','Orientation','vertical');
 
@@ -100,7 +104,6 @@ xlabel(axTime2,'time (s)','FontSize',12)
 
 linkprop([axTime axTime2],{'Position'});
 
-axTime2.YLim = [1 P.num.(P.timeDimName)];
 
 
 % start the roi plot

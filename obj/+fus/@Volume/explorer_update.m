@@ -52,8 +52,12 @@ if any(isnan(mROI(:)))
     miROI = nan(nStim,length(ivec));
 else
     miROI = zeros(size(mROI,1),length(ivec));
-    for i = 1:size(mROI,1)
-        miROI(i,:) = interp1(xvec,mROI(i,:),ivec,'makima');
+    if size(mROI,2) > 1
+        for i = 1:size(mROI,1)
+            miROI(i,:) = interp1(xvec,mROI(i,:),ivec,'makima');
+        end
+    else
+        miROI = mROI;
     end
 end
 clear mROI
