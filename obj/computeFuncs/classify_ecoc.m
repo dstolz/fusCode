@@ -56,6 +56,7 @@ par.crossval = 'kfold';
 par.weights = 'uniform';   % not yet documented
 par.averageFrames = false;
 par.foi = 1;
+par.statOptions = {};
 
 par = validate_inputs(par,vin);
 
@@ -128,11 +129,11 @@ switch lower(par.crossval)
     case 'leaveout'
         mdl = fitcecoc(x,y,'Learners',par.template, ...
             'Leaveout','on','Coding',par.coding, ...
-            'Weights',w);
+            'Weights',w,'Options',par.statOptions);
     case 'kfold'
         mdl = fitcecoc(x,y,'Learners',par.template, ...
             'kfold',par.kfold,'Coding',par.coding, ...
-            'Weights',w);
+            'Weights',w,'Options',par.statOptions);
 end
 warning('on','stats:fitSVMPosterior:PerfectSeparation');
 warning('on','stats:cvpartition:KFoldMissingGrp');
