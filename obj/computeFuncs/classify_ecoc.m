@@ -35,13 +35,21 @@ function [R,mdl] = classify_ecoc(x,vin)
 %                           specified. If false, then each frame specified
 %                           in foi is used as an additional 'observation'.
 %                           Default = false
+%       'OptimizeHyperparameters' 
+%                   ... Use to optimize hyperparameters ondataset, x. You
+%                   can also specify 'HyperparameterOptimizationOptions' as
+%                   a struct. See FITCECOC documentation for details.
+%                   Returns hyperparameter optimization results in R.
 %
 % Outputs:
-%   AUC     ... [1xQ], where Q is number of comparisons. Area under the receiver
-%               operating characteristic curve computed for each comparison.  If
-%               Coding = 'onevsall', then Q will be the same as the number of
-%               Events.  Other Coding schemes will result in different numbers
-%               of results.
+%   R       ... Can be either 'auc' or 'scores'
+%     = 'auc' ... [1xQ], where Q is number of comparisons. Area under the receiver
+%                 operating characteristic curve computed for each comparison.  If
+%                 Coding = 'onevsall', then Q will be the same as the number of
+%                 Events.  Other Coding schemes will result in different numbers
+%                 of results.
+%     = 'scores' ... Results from kfoldPredict(mdl)
+%
 %   mdl     ... Returns a ClassificationECOC model object.
 %
 % DJS 2020
@@ -53,10 +61,14 @@ par.coding = 'onevsall';
 par.template = templateSVM;
 par.result = 'auc';
 par.crossval = 'kfold';
-par.weights = 'uniform';   % not yet documented
 par.averageFrames = false;
 par.foi = 1;
+
+% not yet documented
+par.weights = 'uniform';   
 par.statOptions = {};
+par.OptimizeHyperparameters = 'none';
+par.HyperparameterOptimizationOptions.Verbose = 2;
 
 par = validate_inputs(par,vin);
 
@@ -69,7 +81,6 @@ if par.averageFrames
     % -> Voxels x Events x Reps(mean(Time))
     x = mean(x,4,'omitnan');
 else
-%     % -> Voxels x Events x Reps*Time
     % -> Voxels*Time x Events x Reps
     x = permute(x,[1 4 2 3]);
     x = reshape(x,[n(1)*n(4) 1 n(2) n(3)]);
@@ -122,19 +133,39 @@ end
 if any(all(isnan(x))), return; end
 
 
+defs = {...
+    'Learners',par.template, ...
+    'Coding',par.coding, ...
+    'Weights',w, ...
+    'Options',par.statOptions};
+    
+
+
 warning('off','stats:fitSVMPosterior:PerfectSeparation');
 warning('off','stats:cvpartition:KFoldMissingGrp');
 
-switch lower(par.crossval)
-    case 'leaveout'
-        mdl = fitcecoc(x,y,'Learners',par.template, ...
-            'Leaveout','on','Coding',par.coding, ...
-            'Weights',w,'Options',par.statOptions);
-    case 'kfold'
-        mdl = fitcecoc(x,y,'Learners',par.template, ...
-            'kfold',par.kfold,'Coding',par.coding, ...
-            'Weights',w,'Options',par.statOptions);
+if isequal(par.OptimizeHyperparameters,'none')
+    
+    switch lower(par.crossval)
+        case 'leaveout'
+            defs = [defs {'Leaveout','on'}];
+        case 'kfold'
+            defs = [defs {'kfold',par.kfold}];
+    end
+    mdl = fitcecoc(x,y,defs{:});
+else
+    defs = [defs {'OptimizeHyperparameters',par.OptimizeHyperparameters, ...
+        'HyperparameterOptimizationOptions',par.HyperparameterOptimizationOptions}];
+    [mdl,R] = fitcecoc(x,y,defs{:});
+    
+    
+    warning('on','stats:fitSVMPosterior:PerfectSeparation');
+    warning('on','stats:cvpartition:KFoldMissingGrp');
+
+    return
 end
+
+
 warning('on','stats:fitSVMPosterior:PerfectSeparation');
 warning('on','stats:cvpartition:KFoldMissingGrp');
 
@@ -167,7 +198,7 @@ fn = fieldnames(par);
 for i = 1:2:length(vin)
     ind = strcmpi(vin{i},fn);
     assert(any(ind), ...
-        'fus:Volume:searchlight:InvalidParameterName', ...
+        'classify_ecoc:InvalidParameterName', ...
         sprintf('"%s" is not a valid parameter',vin{i}))
     par.(fn{ind}) = vin{i+1};
 end
@@ -179,18 +210,12 @@ if isstring(par.weights) || ischar(par.weights)
     mustBeMember(par.weights,{'uniform','gaussian','normal'})
 else
     assert(isa(par.weights,'function_handle'), ...
-        'fus:Volume:searchlight:InvalidValue', ...
+        'classify_ecoc:InvalidValue', ...
         'weights must be followed by a string or function handle.')
 end
-
-
 
 mustBeInteger(par.foi);
 mustBeNonempty(par.foi);
 mustBeNonnegative(par.foi);
-% assert(isscalar(par.foi), ...
-%     'fus:Volume:searchlight:InvalidSize', ...
-%     'foi must be scalar, positive integer');
-
 
 end
