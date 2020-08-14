@@ -290,9 +290,9 @@ else
 end
 
 if isnan(estTimeRem)
-    fprintf('%s: completed % 3.2f%%, ~ ???? %s remaining\n',datestr(ts(end,:)),v,u)
+    fprintf('%s: completed %d of %d voxels (%3.2f%%), ~ ???? %s remaining\n',datestr(ts(end,:)),t,n,v,u)
 else
-    fprintf('%s: completed % 3.2f%%, ~% 5.2f %s remaining\n',datestr(ts(end,:)),v,estTimeRem,u)
+    fprintf('%s: completed %d of %d voxels (%3.2f%%), ~% 5.2f %s remaining\n',datestr(ts(end,:)),t,n,v,estTimeRem,u)
 end
 
 end
