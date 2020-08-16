@@ -33,7 +33,7 @@ function [R,mdl] = classify_ecoc(x,vin)
 %                           should be averaged. This option only applies if
 %                           more than one frame of interest (foi) is
 %                           specified. If false, then each frame specified
-%                           in foi is used as an additional 'observation'.
+%                           in foi is used as an additional predictor variable.
 %                           Default = false
 %       'OptimizeHyperparameters' 
 %                   ... Use to optimize hyperparameters ondataset, x. You
@@ -63,12 +63,14 @@ par.result = 'auc';
 par.crossval = 'kfold';
 par.averageFrames = false;
 par.foi = 1;
+par.OptimizeHyperparameters = 'none';
+par.HyperparameterOptimizationOptions.Verbose = 2;
 
 % not yet documented
 par.weights = 'uniform';   
 par.statOptions = {};
-par.OptimizeHyperparameters = 'none';
-par.HyperparameterOptimizationOptions.Verbose = 2;
+par.includeAdditionalMetrics = false;
+par.ScoreTransform = 'identity'; % no transformation
 
 par = validate_inputs(par,vin);
 
@@ -76,7 +78,20 @@ par = validate_inputs(par,vin);
 fpick = repmat({':'},1,ndims(x));
 fpick{ndims(x)} = par.foi;
 x = x(fpick{:});
+
+
+if par.includeAdditionalMetrics
+    xd = diff(x,1,4);
+    xw = fwhm(x);
+    [maxv,xin] = min(x,[],4,'omitnan');
+    [minv,xim] = max(x,[],4,'omitnan');
+    xr = maxv./minv;
+    x = cat(4,x,xd,xw,xin,xim,xr);
+end
+
 n = size(x,1:4);
+
+
 if par.averageFrames
     % -> Voxels x Events x Reps(mean(Time))
     x = mean(x,4,'omitnan');
@@ -137,6 +152,7 @@ defs = {...
     'Learners',par.template, ...
     'Coding',par.coding, ...
     'Weights',w, ...
+    'ScoreTransform',par.ScoreTransform, ...
     'Options',par.statOptions};
     
 
@@ -156,8 +172,8 @@ if isequal(par.OptimizeHyperparameters,'none')
 else
     defs = [defs {'OptimizeHyperparameters',par.OptimizeHyperparameters, ...
         'HyperparameterOptimizationOptions',par.HyperparameterOptimizationOptions}];
-    [mdl,R] = fitcecoc(x,y,defs{:});
-    
+    mdl = fitcecoc(x,y,defs{:});
+    R = mdl.HyperparameterOptimizationResults;
     
     warning('on','stats:fitSVMPosterior:PerfectSeparation');
     warning('on','stats:cvpartition:KFoldMissingGrp');
@@ -186,7 +202,7 @@ switch lower(par.result)
         R = mdl;
         
     case 'posteriors'
-        error('posteriors result is not yet implemented')
+        [R.label,~,~,R.posteror] = resubPredict(mdl);
         
 end
 end
@@ -218,4 +234,17 @@ mustBeInteger(par.foi);
 mustBeNonempty(par.foi);
 mustBeNonnegative(par.foi);
 
+end
+
+
+function w = fwhm(y)
+n = size(y);
+y = reshape(y,[prod(n(1:3)) n(4)]);
+
+s = zeros(size(y,1),1);
+for i = 1:size(y,1)
+    [~,s(i)] = normfit(y(i,:));
+end
+w = 2*sqrt(2*log(2))*s; % where s is the standard deviation
+w = reshape(w,n(1:3));
 end
