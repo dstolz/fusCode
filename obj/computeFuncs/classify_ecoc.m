@@ -82,7 +82,7 @@ x = x(fpick{:});
 
 if par.includeAdditionalMetrics
     xd = diff(x,1,4);
-    xw = fwhm(x);
+    xw = var(x,0,4,'omitnan');
     [maxv,xin] = min(x,[],4,'omitnan');
     [minv,xim] = max(x,[],4,'omitnan');
     xr = maxv./minv;
@@ -236,15 +236,3 @@ mustBeNonnegative(par.foi);
 
 end
 
-
-function w = fwhm(y)
-n = size(y);
-y = reshape(y,[prod(n(1:3)) n(4)]);
-
-s = zeros(size(y,1),1);
-for i = 1:size(y,1)
-    [~,s(i)] = normfit(y(i,:));
-end
-w = 2*sqrt(2*log(2))*s; % where s is the standard deviation
-w = reshape(w,n(1:3));
-end
